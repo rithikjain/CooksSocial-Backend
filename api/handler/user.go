@@ -98,7 +98,7 @@ func userDetails(svc user.Service) http.Handler {
 			view.Wrap(err, w)
 			return
 		}
-		u, err := svc.GetUserByID(claims["id"].(float64))
+		u, err := svc.GetUserByID(uint(claims["id"].(float64)))
 		if err != nil {
 			view.Wrap(err, w)
 			return

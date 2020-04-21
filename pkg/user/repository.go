@@ -6,7 +6,7 @@ import (
 )
 
 type Repository interface {
-	FindByID(id float64) (*User, error)
+	FindByID(id uint) (*User, error)
 
 	FindByEmail(email string) (*User, error)
 
@@ -25,7 +25,7 @@ func NewRepo(db *gorm.DB) Repository {
 	}
 }
 
-func (r *repo) FindByID(id float64) (*User, error) {
+func (r *repo) FindByID(id uint) (*User, error) {
 	user := &User{}
 	r.DB.Where("id = ?", id).First(user)
 	if user.Email == "" {

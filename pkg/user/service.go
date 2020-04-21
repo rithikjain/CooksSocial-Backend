@@ -11,7 +11,7 @@ type Service interface {
 
 	Login(email, password string) (*User, error)
 
-	GetUserByID(id float64) (*User, error)
+	GetUserByID(id uint) (*User, error)
 
 	GetRepo() Repository
 }
@@ -72,7 +72,7 @@ func (s *service) Login(email, password string) (*User, error) {
 	return nil, pkg.ErrNotFound
 }
 
-func (s *service) GetUserByID(id float64) (*User, error) {
+func (s *service) GetUserByID(id uint) (*User, error) {
 	return s.repo.FindByID(id)
 }
 
