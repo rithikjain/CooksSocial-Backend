@@ -42,12 +42,12 @@ func Wrap(err error, w http.ResponseWriter) {
 		code = http.StatusInternalServerError
 	}
 
-	w.WriteHeader(code)
-	w.Header().Add("Content-Type", "application/json; charset=utf-8")
-
 	errView := ErrView{
 		Message: msg,
 		Status:  code,
 	}
+
+	w.Header().Add("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(errView)
 }
