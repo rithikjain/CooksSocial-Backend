@@ -5,6 +5,8 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joho/godotenv"
+	"github.com/rithikjain/SocialRecipe/api/handler"
+	"github.com/rithikjain/SocialRecipe/pkg/user"
 	"log"
 	"net/http"
 	"os"
@@ -56,9 +58,15 @@ func main() {
 	defer db.Close()
 	fmt.Println("Connected to DB...")
 	db.LogMode(true)
+	db.AutoMigrate(&user.User{})
 
-	// Setting up the router
+	// Initializing repos and services
+	userRepo := user.NewRepo(db)
+	userSvc := user.NewService(userRepo)
+
+	// Setting up the router and handlers
 	r := http.NewServeMux()
+	handler.MakeUserHandler(r, userSvc)
 
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
