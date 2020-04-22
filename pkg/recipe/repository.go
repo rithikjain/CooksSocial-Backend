@@ -12,6 +12,10 @@ type Repository interface {
 
 	FindRecipeByID(recipeID uint) (*Recipe, error)
 
+	LikeRecipe(recipeID uint) (*Recipe, error)
+
+	UnlikeRecipe(recipeID uint) (*Recipe, error)
+
 	GetAllRecipesOfUser(userID uint) (*[]Recipe, error)
 
 	DeleteRecipe(recipeID uint) error
@@ -47,6 +51,34 @@ func (r *repo) FindRecipeByID(recipeID uint) (*Recipe, error) {
 	recipe := &Recipe{}
 	err := r.DB.Where("id = ?", recipeID).First(recipe).Error
 	if err != nil {
+		return nil, pkg.ErrDatabase
+	}
+	return recipe, nil
+}
+
+func (r *repo) LikeRecipe(recipeID uint) (*Recipe, error) {
+	recipe := &Recipe{}
+	err := r.DB.Where("id = ?", recipeID).First(recipe).Error
+	if err != nil {
+		return nil, pkg.ErrDatabase
+	}
+	recipe.Likes += 1
+	result := r.DB.Save(recipe)
+	if result.Error != nil {
+		return nil, pkg.ErrDatabase
+	}
+	return recipe, nil
+}
+
+func (r *repo) UnlikeRecipe(recipeID uint) (*Recipe, error) {
+	recipe := &Recipe{}
+	err := r.DB.Where("id = ?", recipeID).First(recipe).Error
+	if err != nil {
+		return nil, pkg.ErrDatabase
+	}
+	recipe.Likes += 1
+	result := r.DB.Save(recipe)
+	if result.Error != nil {
 		return nil, pkg.ErrDatabase
 	}
 	return recipe, nil
