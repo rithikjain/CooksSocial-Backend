@@ -244,6 +244,59 @@ func deleteRecipe(svc recipe.Service) http.Handler {
 	})
 }
 
+// Protected Request
+func showAllRecipesOfUser(svc recipe.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		userIDStr := r.URL.Query().Get("user_id")
+		userID, _ := strconv.Atoi(userIDStr)
+
+		recipes, err := svc.GetAllRecipesOfUser(uint(userID))
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Recipes Fetched",
+			"recipes": recipes,
+		})
+	})
+}
+
+// Protected Request
+func showMyRecipes(svc recipe.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		// Get user id from claims
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		userID := uint(claims["id"].(float64))
+
+		recipes, err := svc.GetAllRecipesOfUser(userID)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Recipes Fetched",
+			"recipes": recipes,
+		})
+	})
+}
+
 func format(encStr string, mime string) string {
 	switch mime {
 	case "image/gif", "image/jpeg", "image/pjpeg", "image/png", "image/tiff":
@@ -258,4 +311,6 @@ func MakeRecipeHandler(r *http.ServeMux, svc recipe.Service) {
 	r.Handle("/api/v1/recipe/create", middleware.Validate(createRecipe(svc)))
 	r.Handle("/api/v1/recipe/update", middleware.Validate(updateRecipe(svc)))
 	r.Handle("/api/v1/recipe/delete", middleware.Validate(deleteRecipe(svc)))
+	r.Handle("/api/v1/recipe/viewofuser", middleware.Validate(showAllRecipesOfUser(svc)))
+	r.Handle("/api/v1/recipe/viewmine", middleware.Validate(showMyRecipes(svc)))
 }
