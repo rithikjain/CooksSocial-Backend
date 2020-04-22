@@ -16,7 +16,9 @@ type ErrView struct {
 var (
 	ErrMethodNotAllowed = errors.New("Error: Method is not allowed")
 	ErrInvalidToken     = errors.New("Error: Invalid Authorization token")
-	ErrUserExists       = errors.New("User already exists")
+	ErrUserExists       = errors.New("Error: User already exists")
+	ErrFile             = errors.New("Error: Something wrong with file")
+	ErrUpload           = errors.New("Error: Upload failed")
 )
 
 var ErrHTTPStatusMap = map[string]int{
@@ -32,6 +34,7 @@ var ErrHTTPStatusMap = map[string]int{
 	ErrMethodNotAllowed.Error(): http.StatusMethodNotAllowed,
 	ErrInvalidToken.Error():     http.StatusBadRequest,
 	ErrUserExists.Error():       http.StatusConflict,
+	ErrFile.Error():             http.StatusBadRequest,
 }
 
 func Wrap(err error, w http.ResponseWriter) {

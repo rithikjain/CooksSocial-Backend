@@ -65,9 +65,13 @@ func main() {
 	userRepo := user.NewRepo(db)
 	userSvc := user.NewService(userRepo)
 
+	recipeRepo := recipe.NewRepo(db)
+	recipeSvc := recipe.NewService(recipeRepo)
+
 	// Setting up the router and handlers
 	r := http.NewServeMux()
 	handler.MakeUserHandler(r, userSvc)
+	handler.MakeRecipeHandler(r, recipeSvc)
 
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
