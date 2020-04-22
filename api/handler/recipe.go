@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/rithikjain/SocialRecipe/api/middleware"
 	"github.com/rithikjain/SocialRecipe/api/view"
+	"github.com/rithikjain/SocialRecipe/pkg"
 	"github.com/rithikjain/SocialRecipe/pkg/recipe"
 	"io/ioutil"
 	"net/http"
@@ -180,6 +181,69 @@ func updateRecipe(svc recipe.Service) http.Handler {
 	})
 }
 
+// Protected Request
+func deleteRecipe(svc recipe.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		recipeIDStr := r.URL.Query().Get("recipe_id")
+		if recipeIDStr == "" {
+			view.Wrap(pkg.ErrNoContent, w)
+			return
+		}
+		recipeID, _ := strconv.Atoi(recipeIDStr)
+		rec, err := svc.FindRecipeByID(uint(recipeID))
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		// Get user id from claims
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		userID := uint(claims["id"].(float64))
+
+		if rec.UserID != userID {
+			view.Wrap(pkg.ErrUnauthorized, w)
+			return
+		}
+
+		req, err := http.NewRequest("DELETE", os.Getenv("cloudinaryDeleteUrl"), nil)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		q := req.URL.Query()
+		q.Add("public_ids", rec.ImgPublicId)
+		req.URL.RawQuery = q.Encode()
+
+		client := &http.Client{}
+		res, err := client.Do(req)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		if res.StatusCode != http.StatusOK {
+			view.Wrap(view.ErrFile, w)
+			return
+		}
+		err = svc.DeleteRecipe(uint(recipeID))
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Recipe Deleted",
+		})
+	})
+}
+
 func format(encStr string, mime string) string {
 	switch mime {
 	case "image/gif", "image/jpeg", "image/pjpeg", "image/png", "image/tiff":
@@ -193,4 +257,5 @@ func format(encStr string, mime string) string {
 func MakeRecipeHandler(r *http.ServeMux, svc recipe.Service) {
 	r.Handle("/api/v1/recipe/create", middleware.Validate(createRecipe(svc)))
 	r.Handle("/api/v1/recipe/update", middleware.Validate(updateRecipe(svc)))
+	r.Handle("/api/v1/recipe/delete", middleware.Validate(deleteRecipe(svc)))
 }
