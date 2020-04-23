@@ -13,6 +13,8 @@ type User struct {
 	Password           string           `json:"password"`
 	ProfileImgUrl      string           `json:"profile_img_url"`
 	ProfileImgPublicID string           `json:"-"`
+	FollowingCount     uint             `json:"following"`
+	FollowersCount     uint             `json:"followers"`
 	Bio                string           `json:"bio"`
 	Recipes            []Recipe         `json:"-" gorm:"foreignkey:UserID"`
 	FavouriteRecipes   []FavoriteRecipe `json:"-" gorm:"foreignkey:UserID"`

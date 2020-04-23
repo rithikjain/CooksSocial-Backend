@@ -99,6 +99,27 @@ func (r *repo) FollowUser(userID, otherUserID uint) error {
 	if err := r.DB.Create(follower).Error; err != nil {
 		return pkg.ErrDatabase
 	}
+
+	u1, err := r.FindByID(userID)
+	if err != nil {
+		return err
+	}
+	u2, err := r.FindByID(otherUserID)
+	if err != nil {
+		return err
+	}
+
+	u1.FollowingCount += 1
+	u2.FollowersCount += 1
+
+	if err := r.DB.Save(u1).Error; err != nil {
+		return pkg.ErrDatabase
+	}
+
+	if err := r.DB.Save(u2).Error; err != nil {
+		return pkg.ErrDatabase
+	}
+
 	return nil
 }
 
@@ -109,6 +130,31 @@ func (r *repo) UnFollowUser(userID, otherUserID uint) error {
 	if err := r.DB.Where("user_id=? and others_user_id=?", otherUserID, userID).Unscoped().Delete(&entities.Follower{}).Error; err != nil {
 		return pkg.ErrDatabase
 	}
+
+	u1, err := r.FindByID(userID)
+	if err != nil {
+		return err
+	}
+	u2, err := r.FindByID(otherUserID)
+	if err != nil {
+		return err
+	}
+
+	if u1.FollowingCount > 0 {
+		u1.FollowingCount -= 1
+	}
+	if u2.FollowersCount > 0 {
+		u2.FollowersCount -= 1
+	}
+
+	if err := r.DB.Save(u1).Error; err != nil {
+		return pkg.ErrDatabase
+	}
+
+	if err := r.DB.Save(u2).Error; err != nil {
+		return pkg.ErrDatabase
+	}
+
 	return nil
 }
 
