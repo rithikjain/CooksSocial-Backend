@@ -16,10 +16,24 @@ type User struct {
 	Bio                string           `json:"bio"`
 	Recipes            []Recipe         `json:"-" gorm:"foreignkey:UserID"`
 	FavouriteRecipes   []FavoriteRecipe `json:"-" gorm:"foreignkey:UserID"`
+	Following          []Following      `json:"-" gorm:"foreignkey:UserID"`
+	Followers          []Follower       `json:"-" gorm:"foreignkey:UserID"`
 }
 
 type FavoriteRecipe struct {
 	gorm.Model
 	UserID   uint
 	RecipeID uint
+}
+
+type Following struct {
+	gorm.Model
+	UserID       uint
+	OthersUserID uint
+}
+
+type Follower struct {
+	gorm.Model
+	UserID       uint
+	OthersUserID uint
 }

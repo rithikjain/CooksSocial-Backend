@@ -18,6 +18,14 @@ type Service interface {
 
 	RemoveRecipeFromFav(userID, recipeID uint) error
 
+	FollowUser(userID, otherUserID uint) error
+
+	UnFollowUser(userID, otherUserID uint) error
+
+	ViewFollowers(userID uint) (*[]entities.User, error)
+
+	ViewFollowing(userID uint) (*[]entities.User, error)
+
 	GetRepo() Repository
 }
 
@@ -87,6 +95,22 @@ func (s *service) AddRecipeToFav(userID, recipeID uint) error {
 
 func (s *service) RemoveRecipeFromFav(userID, recipeID uint) error {
 	return s.repo.RemoveRecipeFromFav(userID, recipeID)
+}
+
+func (s *service) FollowUser(userID, otherUserID uint) error {
+	return s.repo.FollowUser(userID, otherUserID)
+}
+
+func (s *service) UnFollowUser(userID, otherUserID uint) error {
+	return s.repo.UnFollowUser(userID, otherUserID)
+}
+
+func (s *service) ViewFollowers(userID uint) (*[]entities.User, error) {
+	return s.repo.ViewFollowers(userID)
+}
+
+func (s *service) ViewFollowing(userID uint) (*[]entities.User, error) {
+	return s.repo.ViewFollowing(userID)
 }
 
 func (s *service) GetRepo() Repository {

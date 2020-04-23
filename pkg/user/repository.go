@@ -17,6 +17,14 @@ type Repository interface {
 
 	AddRecipeToFav(userID, recipeID uint) error
 
+	FollowUser(userID, otherUserID uint) error
+
+	UnFollowUser(userID, otherUserID uint) error
+
+	ViewFollowers(userID uint) (*[]entities.User, error)
+
+	ViewFollowing(userID uint) (*[]entities.User, error)
+
 	RemoveRecipeFromFav(userID, recipeID uint) error
 }
 
@@ -74,6 +82,72 @@ func (r *repo) AddRecipeToFav(userID, recipeID uint) error {
 		return pkg.ErrDatabase
 	}
 	return nil
+}
+
+func (r *repo) FollowUser(userID, otherUserID uint) error {
+	following := &entities.Following{
+		UserID:       userID,
+		OthersUserID: otherUserID,
+	}
+	if err := r.DB.Create(following).Error; err != nil {
+		return pkg.ErrDatabase
+	}
+	follower := &entities.Follower{
+		UserID:       otherUserID,
+		OthersUserID: userID,
+	}
+	if err := r.DB.Create(follower).Error; err != nil {
+		return pkg.ErrDatabase
+	}
+	return nil
+}
+
+func (r *repo) UnFollowUser(userID, otherUserID uint) error {
+	if err := r.DB.Where("user_id=? and others_user_id=?", userID, otherUserID).Unscoped().Delete(&entities.Following{}).Error; err != nil {
+		return pkg.ErrDatabase
+	}
+	if err := r.DB.Where("user_id=? and others_user_id=?", otherUserID, userID).Unscoped().Delete(&entities.Follower{}).Error; err != nil {
+		return pkg.ErrDatabase
+	}
+	return nil
+}
+
+func (r *repo) ViewFollowers(userID uint) (*[]entities.User, error) {
+	var followers []entities.Follower
+	if err := r.DB.Where("user_id = ?", userID).Find(&followers).Error; err != nil {
+		return nil, pkg.ErrDatabase
+	}
+
+	var otherUserIDs []uint
+	for _, follow := range followers {
+		otherUserIDs = append(otherUserIDs, follow.OthersUserID)
+	}
+
+	var users []entities.User
+	er := r.DB.Where(otherUserIDs).Find(&users).Error
+	if er != nil {
+		return nil, pkg.ErrDatabase
+	}
+	return &users, nil
+}
+
+func (r *repo) ViewFollowing(userID uint) (*[]entities.User, error) {
+	var followings []entities.Following
+	if err := r.DB.Where("user_id = ?", userID).Find(&followings).Error; err != nil {
+		return nil, pkg.ErrDatabase
+	}
+
+	var otherUserIDs []uint
+	for _, following := range followings {
+		otherUserIDs = append(otherUserIDs, following.OthersUserID)
+	}
+
+	var users []entities.User
+	er := r.DB.Where(otherUserIDs).Find(&users).Error
+	if er != nil {
+		return nil, pkg.ErrDatabase
+	}
+	return &users, nil
 }
 
 func (r *repo) RemoveRecipeFromFav(userID, recipeID uint) error {

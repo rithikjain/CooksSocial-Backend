@@ -60,7 +60,14 @@ func main() {
 	defer db.Close()
 	fmt.Println("Connected to DB...")
 	db.LogMode(true)
-	db.AutoMigrate(&entities.User{}, &entities.Recipe{}, &entities.FavoriteRecipe{}, &entities.LikeDetail{})
+	db.AutoMigrate(
+		&entities.User{},
+		&entities.Recipe{},
+		&entities.FavoriteRecipe{},
+		&entities.LikeDetail{},
+		&entities.Follower{},
+		&entities.Following{},
+	)
 
 	// Initializing repos and services
 	userRepo := user.NewRepo(db)

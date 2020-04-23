@@ -234,6 +234,128 @@ func removeRecipeFromFav(svc user.Service) http.Handler {
 	})
 }
 
+// Protected Request
+func followUser(svc user.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+
+		otherUserIDStr := r.URL.Query().Get("user_id")
+		if otherUserIDStr == "" {
+			view.Wrap(pkg.ErrNoContent, w)
+			return
+		}
+		otherUserID, _ := strconv.Atoi(otherUserIDStr)
+
+		err = svc.FollowUser(uint(claims["id"].(float64)), uint(otherUserID))
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "User followed",
+		})
+	})
+}
+
+// Protected Request
+func unFollowUser(svc user.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+
+		otherUserIDStr := r.URL.Query().Get("user_id")
+		if otherUserIDStr == "" {
+			view.Wrap(pkg.ErrNoContent, w)
+			return
+		}
+		otherUserID, _ := strconv.Atoi(otherUserIDStr)
+
+		err = svc.UnFollowUser(uint(claims["id"].(float64)), uint(otherUserID))
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "User unfollowed",
+		})
+	})
+}
+
+// Protected Request
+func viewFollowers(svc user.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		userID := uint(claims["id"].(float64))
+
+		users, err := svc.ViewFollowers(userID)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Users fetched",
+			"users":   users,
+		})
+	})
+}
+
+// Protected Request
+func viewFollowing(svc user.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		userID := uint(claims["id"].(float64))
+
+		users, err := svc.ViewFollowing(userID)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Users fetched",
+			"users":   users,
+		})
+	})
+}
+
 // Handlers
 func MakeUserHandler(r *http.ServeMux, svc user.Service) {
 	r.Handle("/api/v1/user/register", register(svc))
@@ -241,4 +363,8 @@ func MakeUserHandler(r *http.ServeMux, svc user.Service) {
 	r.Handle("/api/v1/user/details", middleware.Validate(userDetails(svc)))
 	r.Handle("/api/v1/user/addrecipetofav", middleware.Validate(addRecipeToFav(svc)))
 	r.Handle("/api/v1/user/removerecipefromfav", middleware.Validate(removeRecipeFromFav(svc)))
+	r.Handle("/api/v1/user/follow", middleware.Validate(followUser(svc)))
+	r.Handle("/api/v1/user/unfollow", middleware.Validate(unFollowUser(svc)))
+	r.Handle("/api/v1/user/viewfollowers", middleware.Validate(viewFollowers(svc)))
+	r.Handle("/api/v1/user/viewfollowing", middleware.Validate(viewFollowing(svc)))
 }
