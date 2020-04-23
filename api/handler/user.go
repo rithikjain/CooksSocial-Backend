@@ -73,6 +73,7 @@ func register(svc user.Service) http.Handler {
 			}
 
 			user.Name = r.FormValue("name")
+			user.Username = r.FormValue("username")
 			user.PhoneNumber = r.FormValue("phone_number")
 			user.Email = r.FormValue("email")
 			user.Password = r.FormValue("password")
