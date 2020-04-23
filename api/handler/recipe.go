@@ -327,6 +327,95 @@ func showMyFavRecipes(svc recipe.Service) http.Handler {
 	})
 }
 
+// Protected Request
+func likeRecipe(svc recipe.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		// Get user id from claims
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		userID := uint(claims["id"].(float64))
+
+		recipeIDStr := r.URL.Query().Get("recipe_id")
+		recipeID, _ := strconv.Atoi(recipeIDStr)
+
+		err = svc.LikeRecipe(userID, uint(recipeID))
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Recipe liked",
+		})
+	})
+}
+
+// Protected Request
+func unlikeRecipe(svc recipe.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		// Get user id from claims
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		userID := uint(claims["id"].(float64))
+
+		recipeIDStr := r.URL.Query().Get("recipe_id")
+		recipeID, _ := strconv.Atoi(recipeIDStr)
+
+		err = svc.UnlikeRecipe(userID, uint(recipeID))
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Recipe unliked",
+		})
+	})
+}
+
+// Protected Request
+func showUsersWhoLiked(svc recipe.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		recipeIDStr := r.URL.Query().Get("recipe_id")
+		recipeID, _ := strconv.Atoi(recipeIDStr)
+
+		users, err := svc.ShowUsersWhoLiked(uint(recipeID))
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Users fetched",
+			"users":   users,
+		})
+	})
+}
+
 func format(encStr string, mime string) string {
 	switch mime {
 	case "image/gif", "image/jpeg", "image/pjpeg", "image/png", "image/tiff":
@@ -344,4 +433,7 @@ func MakeRecipeHandler(r *http.ServeMux, svc recipe.Service) {
 	r.Handle("/api/v1/recipe/viewofuser", middleware.Validate(showAllRecipesOfUser(svc)))
 	r.Handle("/api/v1/recipe/viewmine", middleware.Validate(showMyRecipes(svc)))
 	r.Handle("/api/v1/recipe/viewmyfav", middleware.Validate(showMyFavRecipes(svc)))
+	r.Handle("/api/v1/recipe/like", middleware.Validate(likeRecipe(svc)))
+	r.Handle("/api/v1/recipe/unlike", middleware.Validate(unlikeRecipe(svc)))
+	r.Handle("/api/v1/recipe/viewuserlikes", middleware.Validate(showUsersWhoLiked(svc)))
 }

@@ -13,9 +13,11 @@ type Repository interface {
 
 	FindRecipeByID(recipeID uint) (*entities.Recipe, error)
 
-	LikeRecipe(recipeID uint) (*entities.Recipe, error)
+	LikeRecipe(userID, recipeID uint) error
 
-	UnlikeRecipe(recipeID uint) (*entities.Recipe, error)
+	UnlikeRecipe(userID, recipeID uint) error
+
+	GetUsersWhoLiked(recipeID uint) (*[]entities.User, error)
 
 	GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error)
 
@@ -59,32 +61,66 @@ func (r *repo) FindRecipeByID(recipeID uint) (*entities.Recipe, error) {
 	return recipe, nil
 }
 
-func (r *repo) LikeRecipe(recipeID uint) (*entities.Recipe, error) {
+func (r *repo) LikeRecipe(userID, recipeID uint) error {
 	recipe := &entities.Recipe{}
 	err := r.DB.Where("id = ?", recipeID).First(recipe).Error
 	if err != nil {
-		return nil, pkg.ErrDatabase
+		return pkg.ErrDatabase
 	}
 	recipe.Likes += 1
 	result := r.DB.Save(recipe)
 	if result.Error != nil {
-		return nil, pkg.ErrDatabase
+		return pkg.ErrDatabase
 	}
-	return recipe, nil
+
+	like := &entities.LikeDetail{
+		RecipeID: recipeID,
+		UserID:   userID,
+	}
+	err = r.DB.Create(like).Error
+	if err != nil {
+		return pkg.ErrDatabase
+	}
+
+	return nil
 }
 
-func (r *repo) UnlikeRecipe(recipeID uint) (*entities.Recipe, error) {
+func (r *repo) UnlikeRecipe(userID, recipeID uint) error {
 	recipe := &entities.Recipe{}
 	err := r.DB.Where("id = ?", recipeID).First(recipe).Error
 	if err != nil {
-		return nil, pkg.ErrDatabase
+		return pkg.ErrDatabase
 	}
-	recipe.Likes += 1
+	recipe.Likes -= 1
 	result := r.DB.Save(recipe)
 	if result.Error != nil {
+		return pkg.ErrDatabase
+	}
+	err = r.DB.Where("user_id = ? and recipe_id = ?", userID, recipeID).Unscoped().Delete(&entities.LikeDetail{}).Error
+	if err != nil {
+		return pkg.ErrDatabase
+	}
+
+	return nil
+}
+
+func (r *repo) GetUsersWhoLiked(recipeID uint) (*[]entities.User, error) {
+	var likes []entities.LikeDetail
+	if err := r.DB.Where("recipe_id = ?", recipeID).Find(&likes).Error; err != nil {
 		return nil, pkg.ErrDatabase
 	}
-	return recipe, nil
+
+	var userIDs []uint
+	for _, like := range likes {
+		userIDs = append(userIDs, like.UserID)
+	}
+
+	var users []entities.User
+	er := r.DB.Where(userIDs).Find(&users).Error
+	if er != nil {
+		return nil, pkg.ErrDatabase
+	}
+	return &users, nil
 }
 
 func (r *repo) GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error) {

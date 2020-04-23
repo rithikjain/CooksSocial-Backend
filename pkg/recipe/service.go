@@ -9,9 +9,11 @@ type Service interface {
 
 	FindRecipeByID(recipeID uint) (*entities.Recipe, error)
 
-	LikeRecipe(recipeID uint) (*entities.Recipe, error)
+	LikeRecipe(userID, recipeID uint) error
 
-	UnlikeRecipe(recipeID uint) (*entities.Recipe, error)
+	UnlikeRecipe(userID, recipeID uint) error
+
+	ShowUsersWhoLiked(recipeID uint) (*[]entities.User, error)
 
 	GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error)
 
@@ -42,12 +44,16 @@ func (s *service) FindRecipeByID(recipeID uint) (*entities.Recipe, error) {
 	return s.repo.FindRecipeByID(recipeID)
 }
 
-func (s *service) LikeRecipe(recipeID uint) (*entities.Recipe, error) {
-	return s.repo.LikeRecipe(recipeID)
+func (s *service) LikeRecipe(userID, recipeID uint) error {
+	return s.repo.LikeRecipe(userID, recipeID)
 }
 
-func (s *service) UnlikeRecipe(recipeID uint) (*entities.Recipe, error) {
-	return s.repo.UnlikeRecipe(recipeID)
+func (s *service) UnlikeRecipe(userID, recipeID uint) error {
+	return s.repo.UnlikeRecipe(userID, recipeID)
+}
+
+func (s *service) ShowUsersWhoLiked(recipeID uint) (*[]entities.User, error) {
+	return s.repo.GetUsersWhoLiked(recipeID)
 }
 
 func (s *service) GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error) {
