@@ -15,4 +15,5 @@ type User struct {
 	ProfileImgPublicID string          `json:"-"`
 	Bio                string          `json:"bio"`
 	Recipes            []recipe.Recipe `json:"-" gorm:"foreignkey:UserID"`
+	FavouriteRecipeIDs []uint          `json:"-"`
 }

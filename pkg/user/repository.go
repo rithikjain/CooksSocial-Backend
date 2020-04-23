@@ -13,6 +13,10 @@ type Repository interface {
 	Register(user *User) (*User, error)
 
 	DoesEmailExist(email string) (bool, error)
+
+	AddRecipeToFav(userID, recipeID uint) error
+
+	RemoveRecipeFromFav(userID, recipeID uint) error
 }
 
 type repo struct {
@@ -58,4 +62,38 @@ func (r *repo) FindByEmail(email string) (*User, error) {
 		return nil, pkg.ErrNotFound
 	}
 	return user, nil
+}
+
+func (r *repo) AddRecipeToFav(userID, recipeID uint) error {
+	user := &User{}
+	r.DB.Where("id = ?", userID).First(user)
+	if user.Email == "" {
+		return pkg.ErrNotFound
+	}
+	for _, id := range user.FavouriteRecipeIDs {
+		if id == recipeID {
+			return pkg.ErrExists
+		}
+	}
+	user.FavouriteRecipeIDs = append(user.FavouriteRecipeIDs, recipeID)
+	return nil
+}
+
+func (r *repo) RemoveRecipeFromFav(userID, recipeID uint) error {
+	user := &User{}
+	r.DB.Where("id = ?", userID).First(user)
+	if user.Email == "" {
+		return pkg.ErrNotFound
+	}
+	for idx, id := range user.FavouriteRecipeIDs {
+		if id == recipeID {
+			user.FavouriteRecipeIDs = RemoveIndex(user.FavouriteRecipeIDs, idx)
+			return nil
+		}
+	}
+	return pkg.ErrNotFound
+}
+
+func RemoveIndex(s []uint, index int) []uint {
+	return append(s[:index], s[index+1:]...)
 }
