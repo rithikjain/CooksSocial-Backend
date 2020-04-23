@@ -1,12 +1,15 @@
 package handler
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/rithikjain/SocialRecipe/api/middleware"
 	"github.com/rithikjain/SocialRecipe/api/view"
 	"github.com/rithikjain/SocialRecipe/pkg/user"
+	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 )
 
@@ -17,10 +20,62 @@ func register(svc user.Service) http.Handler {
 			return
 		}
 
+		_ = r.ParseMultipartForm(10 << 20)
+		_ = r.ParseForm()
+
 		var user user.User
-		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-			view.Wrap(err, w)
-			return
+
+		file, handler, err := r.FormFile("image")
+		if err != nil {
+			user.Name = r.FormValue("name")
+			user.PhoneNumber = r.FormValue("phone_number")
+			user.Email = r.FormValue("email")
+			user.Password = r.FormValue("password")
+			user.ProfileImgUrl = "https://res.cloudinary.com/dvn1hxflu/image/upload/v1587624171/blank-profile-picture-973460_640_bgnkjn.png"
+			user.ProfileImgPublicID = ""
+			user.Bio = r.FormValue("bio")
+		} else {
+			defer file.Close()
+
+			fileBytes, err := ioutil.ReadAll(file)
+			if err != nil {
+				view.Wrap(view.ErrFile, w)
+			}
+			imgBase64 := base64.StdEncoding.EncodeToString(fileBytes)
+
+			imgUrl := format(imgBase64, handler.Header.Get("Content-Type"))
+
+			// Uploading the image on cloudinary
+			form := url.Values{}
+			form.Add("file", imgUrl)
+			form.Add("upload_preset", os.Getenv("uploadPreset"))
+
+			response, err := http.PostForm(os.Getenv("cloudinaryUrl"), form)
+			if err != nil {
+				view.Wrap(view.ErrFile, w)
+				return
+			}
+			defer response.Body.Close()
+
+			var resJson map[string]interface{}
+			err = json.NewDecoder(response.Body).Decode(&resJson)
+			if err != nil {
+				view.Wrap(view.ErrUpload, w)
+				return
+			}
+
+			if response.StatusCode != http.StatusOK {
+				view.Wrap(view.ErrUpload, w)
+				return
+			}
+
+			user.Name = r.FormValue("name")
+			user.PhoneNumber = r.FormValue("phone_number")
+			user.Email = r.FormValue("email")
+			user.Password = r.FormValue("password")
+			user.ProfileImgUrl = resJson["secure_url"].(string)
+			user.ProfileImgPublicID = resJson["public_id"].(string)
+			user.Bio = r.FormValue("bio")
 		}
 
 		u, err := svc.Register(&user)
