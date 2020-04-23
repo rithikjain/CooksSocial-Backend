@@ -2,16 +2,17 @@ package user
 
 import (
 	"github.com/rithikjain/SocialRecipe/pkg"
+	"github.com/rithikjain/SocialRecipe/pkg/entities"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
 )
 
 type Service interface {
-	Register(user *User) (*User, error)
+	Register(user *entities.User) (*entities.User, error)
 
-	Login(email, password string) (*User, error)
+	Login(email, password string) (*entities.User, error)
 
-	GetUserByID(id uint) (*User, error)
+	GetUserByID(id uint) (*entities.User, error)
 
 	AddRecipeToFav(userID, recipeID uint) error
 
@@ -30,7 +31,7 @@ func NewService(r Repository) Service {
 	}
 }
 
-func (user *User) Validate() (bool, error) {
+func Validate(user *entities.User) (bool, error) {
 	if !strings.Contains(user.Email, "@") {
 		return false, pkg.ErrEmail
 	}
@@ -41,9 +42,9 @@ func (user *User) Validate() (bool, error) {
 	return true, nil
 }
 
-func (s *service) Register(user *User) (*User, error) {
+func (s *service) Register(user *entities.User) (*entities.User, error) {
 	// Validation
-	validate, err := user.Validate()
+	validate, err := Validate(user)
 	if !validate {
 		return nil, err
 	}
@@ -64,8 +65,8 @@ func (s *service) Register(user *User) (*User, error) {
 	return s.repo.Register(user)
 }
 
-func (s *service) Login(email, password string) (*User, error) {
-	user := &User{}
+func (s *service) Login(email, password string) (*entities.User, error) {
+	user := &entities.User{}
 	user, err := s.repo.FindByEmail(email)
 	if err != nil {
 		return nil, err
@@ -76,7 +77,7 @@ func (s *service) Login(email, password string) (*User, error) {
 	return nil, pkg.ErrNotFound
 }
 
-func (s *service) GetUserByID(id uint) (*User, error) {
+func (s *service) GetUserByID(id uint) (*entities.User, error) {
 	return s.repo.FindByID(id)
 }
 

@@ -1,4 +1,4 @@
-package recipe
+package entities
 
 import "github.com/jinzhu/gorm"
 

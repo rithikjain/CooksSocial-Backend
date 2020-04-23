@@ -3,23 +3,23 @@ package recipe
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/rithikjain/SocialRecipe/pkg"
-	user2 "github.com/rithikjain/SocialRecipe/pkg/user"
+	"github.com/rithikjain/SocialRecipe/pkg/entities"
 )
 
 type Repository interface {
-	CreateRecipe(recipe *Recipe) (*Recipe, error)
+	CreateRecipe(recipe *entities.Recipe) (*entities.Recipe, error)
 
-	UpdateRecipe(recipe *Recipe) (*Recipe, error)
+	UpdateRecipe(recipe *entities.Recipe) (*entities.Recipe, error)
 
-	FindRecipeByID(recipeID uint) (*Recipe, error)
+	FindRecipeByID(recipeID uint) (*entities.Recipe, error)
 
-	LikeRecipe(recipeID uint) (*Recipe, error)
+	LikeRecipe(recipeID uint) (*entities.Recipe, error)
 
-	UnlikeRecipe(recipeID uint) (*Recipe, error)
+	UnlikeRecipe(recipeID uint) (*entities.Recipe, error)
 
-	GetAllRecipesOfUser(userID uint) (*[]Recipe, error)
+	GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error)
 
-	GetUsersFavRecipes(userID uint) (*[]Recipe, error)
+	GetUsersFavRecipes(userID uint) (*[]entities.Recipe, error)
 
 	DeleteRecipe(recipeID uint) error
 }
@@ -34,7 +34,7 @@ func NewRepo(db *gorm.DB) Repository {
 	}
 }
 
-func (r *repo) CreateRecipe(recipe *Recipe) (*Recipe, error) {
+func (r *repo) CreateRecipe(recipe *entities.Recipe) (*entities.Recipe, error) {
 	result := r.DB.Create(recipe)
 	if result.Error != nil {
 		return nil, pkg.ErrDatabase
@@ -42,7 +42,7 @@ func (r *repo) CreateRecipe(recipe *Recipe) (*Recipe, error) {
 	return recipe, nil
 }
 
-func (r *repo) UpdateRecipe(recipe *Recipe) (*Recipe, error) {
+func (r *repo) UpdateRecipe(recipe *entities.Recipe) (*entities.Recipe, error) {
 	result := r.DB.Save(recipe)
 	if result.Error != nil {
 		return nil, pkg.ErrDatabase
@@ -50,8 +50,8 @@ func (r *repo) UpdateRecipe(recipe *Recipe) (*Recipe, error) {
 	return recipe, nil
 }
 
-func (r *repo) FindRecipeByID(recipeID uint) (*Recipe, error) {
-	recipe := &Recipe{}
+func (r *repo) FindRecipeByID(recipeID uint) (*entities.Recipe, error) {
+	recipe := &entities.Recipe{}
 	err := r.DB.Where("id = ?", recipeID).First(recipe).Error
 	if err != nil {
 		return nil, pkg.ErrDatabase
@@ -59,22 +59,8 @@ func (r *repo) FindRecipeByID(recipeID uint) (*Recipe, error) {
 	return recipe, nil
 }
 
-func (r *repo) LikeRecipe(recipeID uint) (*Recipe, error) {
-	recipe := &Recipe{}
-	err := r.DB.Where("id = ?", recipeID).First(recipe).Error
-	if err != nil {
-		return nil, pkg.ErrDatabase
-	}
-	recipe.Likes += 1
-	result := r.DB.Save(recipe)
-	if result.Error != nil {
-		return nil, pkg.ErrDatabase
-	}
-	return recipe, nil
-}
-
-func (r *repo) UnlikeRecipe(recipeID uint) (*Recipe, error) {
-	recipe := &Recipe{}
+func (r *repo) LikeRecipe(recipeID uint) (*entities.Recipe, error) {
+	recipe := &entities.Recipe{}
 	err := r.DB.Where("id = ?", recipeID).First(recipe).Error
 	if err != nil {
 		return nil, pkg.ErrDatabase
@@ -87,8 +73,22 @@ func (r *repo) UnlikeRecipe(recipeID uint) (*Recipe, error) {
 	return recipe, nil
 }
 
-func (r *repo) GetAllRecipesOfUser(userID uint) (*[]Recipe, error) {
-	var recipes []Recipe
+func (r *repo) UnlikeRecipe(recipeID uint) (*entities.Recipe, error) {
+	recipe := &entities.Recipe{}
+	err := r.DB.Where("id = ?", recipeID).First(recipe).Error
+	if err != nil {
+		return nil, pkg.ErrDatabase
+	}
+	recipe.Likes += 1
+	result := r.DB.Save(recipe)
+	if result.Error != nil {
+		return nil, pkg.ErrDatabase
+	}
+	return recipe, nil
+}
+
+func (r *repo) GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error) {
+	var recipes []entities.Recipe
 	err := r.DB.Where("user_id = ?", userID).Find(&recipes).Error
 	if err != nil {
 		return nil, pkg.ErrDatabase
@@ -96,27 +96,34 @@ func (r *repo) GetAllRecipesOfUser(userID uint) (*[]Recipe, error) {
 	return &recipes, nil
 }
 
-func (r *repo) GetUsersFavRecipes(userID uint) (*[]Recipe, error) {
-	user := &user2.User{}
-	r.DB.Where("id = ?", userID).First(user)
-	if user.Email == "" {
-		return nil, pkg.ErrNotFound
-	}
-	var recipes []Recipe
-	err := r.DB.Where(user.FavouriteRecipeIDs).Find(&recipes).Error
+func (r *repo) GetUsersFavRecipes(userID uint) (*[]entities.Recipe, error) {
+	var favs []entities.FavoriteRecipe
+	err := r.DB.Where("user_id = ?", userID).Find(&favs).Error
+
 	if err != nil {
+		return nil, pkg.ErrDatabase
+	}
+
+	var favouriteRecipeIDs []uint
+	for _, fav := range favs {
+		favouriteRecipeIDs = append(favouriteRecipeIDs, fav.RecipeID)
+	}
+
+	var recipes []entities.Recipe
+	er := r.DB.Where(favouriteRecipeIDs).Find(&recipes).Error
+	if er != nil {
 		return nil, pkg.ErrDatabase
 	}
 	return &recipes, nil
 }
 
 func (r *repo) DeleteRecipe(recipeID uint) error {
-	recipe := &Recipe{}
+	recipe := &entities.Recipe{}
 	err := r.DB.Where("id = ?", recipeID).First(recipe).Error
 	if err != nil {
 		return pkg.ErrDatabase
 	}
-	err = r.DB.Delete(recipe).Error
+	err = r.DB.Unscoped().Delete(recipe).Error
 	if err != nil {
 		return pkg.ErrDatabase
 	}

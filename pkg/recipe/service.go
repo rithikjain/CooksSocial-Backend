@@ -1,19 +1,21 @@
 package recipe
 
+import "github.com/rithikjain/SocialRecipe/pkg/entities"
+
 type Service interface {
-	CreateRecipe(recipe *Recipe) (*Recipe, error)
+	CreateRecipe(recipe *entities.Recipe) (*entities.Recipe, error)
 
-	UpdateRecipe(recipe *Recipe) (*Recipe, error)
+	UpdateRecipe(recipe *entities.Recipe) (*entities.Recipe, error)
 
-	FindRecipeByID(recipeID uint) (*Recipe, error)
+	FindRecipeByID(recipeID uint) (*entities.Recipe, error)
 
-	LikeRecipe(recipeID uint) (*Recipe, error)
+	LikeRecipe(recipeID uint) (*entities.Recipe, error)
 
-	UnlikeRecipe(recipeID uint) (*Recipe, error)
+	UnlikeRecipe(recipeID uint) (*entities.Recipe, error)
 
-	GetAllRecipesOfUser(userID uint) (*[]Recipe, error)
+	GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error)
 
-	ShowUsersFavRecipes(userID uint) (*[]Recipe, error)
+	ShowUsersFavRecipes(userID uint) (*[]entities.Recipe, error)
 
 	DeleteRecipe(recipeID uint) error
 }
@@ -28,31 +30,31 @@ func NewService(r Repository) Service {
 	}
 }
 
-func (s *service) CreateRecipe(recipe *Recipe) (*Recipe, error) {
+func (s *service) CreateRecipe(recipe *entities.Recipe) (*entities.Recipe, error) {
 	return s.repo.CreateRecipe(recipe)
 }
 
-func (s *service) UpdateRecipe(recipe *Recipe) (*Recipe, error) {
+func (s *service) UpdateRecipe(recipe *entities.Recipe) (*entities.Recipe, error) {
 	return s.repo.UpdateRecipe(recipe)
 }
 
-func (s *service) FindRecipeByID(recipeID uint) (*Recipe, error) {
+func (s *service) FindRecipeByID(recipeID uint) (*entities.Recipe, error) {
 	return s.repo.FindRecipeByID(recipeID)
 }
 
-func (s *service) LikeRecipe(recipeID uint) (*Recipe, error) {
+func (s *service) LikeRecipe(recipeID uint) (*entities.Recipe, error) {
 	return s.repo.LikeRecipe(recipeID)
 }
 
-func (s *service) UnlikeRecipe(recipeID uint) (*Recipe, error) {
+func (s *service) UnlikeRecipe(recipeID uint) (*entities.Recipe, error) {
 	return s.repo.UnlikeRecipe(recipeID)
 }
 
-func (s *service) GetAllRecipesOfUser(userID uint) (*[]Recipe, error) {
+func (s *service) GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error) {
 	return s.repo.GetAllRecipesOfUser(userID)
 }
 
-func (s *service) ShowUsersFavRecipes(userID uint) (*[]Recipe, error) {
+func (s *service) ShowUsersFavRecipes(userID uint) (*[]entities.Recipe, error) {
 	return s.repo.GetUsersFavRecipes(userID)
 }
 

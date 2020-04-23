@@ -7,6 +7,7 @@ import (
 	"github.com/rithikjain/SocialRecipe/api/middleware"
 	"github.com/rithikjain/SocialRecipe/api/view"
 	"github.com/rithikjain/SocialRecipe/pkg"
+	"github.com/rithikjain/SocialRecipe/pkg/entities"
 	"github.com/rithikjain/SocialRecipe/pkg/recipe"
 	"io/ioutil"
 	"net/http"
@@ -73,7 +74,7 @@ func createRecipe(svc recipe.Service) http.Handler {
 		}
 
 		difficulty, _ := strconv.Atoi(r.FormValue("difficulty"))
-		recipe := &recipe.Recipe{
+		recipe := &entities.Recipe{
 			UserID:      userID,
 			RecipeName:  r.FormValue("recipe_name"),
 			Description: r.FormValue("description"),
@@ -89,7 +90,7 @@ func createRecipe(svc recipe.Service) http.Handler {
 		}
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Recipe Created",
+			"message": "Recipe created",
 			"recipe":  rec,
 		})
 	})
@@ -175,7 +176,7 @@ func updateRecipe(svc recipe.Service) http.Handler {
 		}
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Recipe Updated",
+			"message": "Recipe updated",
 			"recipe":  re,
 		})
 	})
@@ -239,7 +240,7 @@ func deleteRecipe(svc recipe.Service) http.Handler {
 		}
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Recipe Deleted",
+			"message": "Recipe deleted",
 		})
 	})
 }
@@ -262,7 +263,7 @@ func showAllRecipesOfUser(svc recipe.Service) http.Handler {
 		}
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Recipes Fetched",
+			"message": "Recipes fetched",
 			"recipes": recipes,
 		})
 	})
@@ -291,7 +292,36 @@ func showMyRecipes(svc recipe.Service) http.Handler {
 		}
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Recipes Fetched",
+			"message": "Recipes fetched",
+			"recipes": recipes,
+		})
+	})
+}
+
+func showMyFavRecipes(svc recipe.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		// Get user id from claims
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		userID := uint(claims["id"].(float64))
+
+		recipes, err := svc.ShowUsersFavRecipes(userID)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Favorite recipes fetched",
 			"recipes": recipes,
 		})
 	})
@@ -313,4 +343,5 @@ func MakeRecipeHandler(r *http.ServeMux, svc recipe.Service) {
 	r.Handle("/api/v1/recipe/delete", middleware.Validate(deleteRecipe(svc)))
 	r.Handle("/api/v1/recipe/viewofuser", middleware.Validate(showAllRecipesOfUser(svc)))
 	r.Handle("/api/v1/recipe/viewmine", middleware.Validate(showMyRecipes(svc)))
+	r.Handle("/api/v1/recipe/viewmyfav", middleware.Validate(showMyFavRecipes(svc)))
 }

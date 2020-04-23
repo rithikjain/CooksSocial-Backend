@@ -3,14 +3,15 @@ package user
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/rithikjain/SocialRecipe/pkg"
+	"github.com/rithikjain/SocialRecipe/pkg/entities"
 )
 
 type Repository interface {
-	FindByID(id uint) (*User, error)
+	FindByID(id uint) (*entities.User, error)
 
-	FindByEmail(email string) (*User, error)
+	FindByEmail(email string) (*entities.User, error)
 
-	Register(user *User) (*User, error)
+	Register(user *entities.User) (*entities.User, error)
 
 	DoesEmailExist(email string) (bool, error)
 
@@ -29,8 +30,8 @@ func NewRepo(db *gorm.DB) Repository {
 	}
 }
 
-func (r *repo) FindByID(id uint) (*User, error) {
-	user := &User{}
+func (r *repo) FindByID(id uint) (*entities.User, error) {
+	user := &entities.User{}
 	r.DB.Where("id = ?", id).First(user)
 	if user.Email == "" {
 		return nil, pkg.ErrNotFound
@@ -38,7 +39,7 @@ func (r *repo) FindByID(id uint) (*User, error) {
 	return user, nil
 }
 
-func (r *repo) Register(user *User) (*User, error) {
+func (r *repo) Register(user *entities.User) (*entities.User, error) {
 	result := r.DB.Save(user)
 	if result.Error != nil {
 		return nil, pkg.ErrDatabase
@@ -47,15 +48,15 @@ func (r *repo) Register(user *User) (*User, error) {
 }
 
 func (r *repo) DoesEmailExist(email string) (bool, error) {
-	user := &User{}
+	user := &entities.User{}
 	if r.DB.Where("email = ?", email).First(user).RecordNotFound() {
 		return false, nil
 	}
 	return true, nil
 }
 
-func (r *repo) FindByEmail(email string) (*User, error) {
-	user := &User{}
+func (r *repo) FindByEmail(email string) (*entities.User, error) {
+	user := &entities.User{}
 	result := r.DB.Where("email = ?", email).First(user)
 
 	if result.Error == gorm.ErrRecordNotFound {
@@ -65,35 +66,20 @@ func (r *repo) FindByEmail(email string) (*User, error) {
 }
 
 func (r *repo) AddRecipeToFav(userID, recipeID uint) error {
-	user := &User{}
-	r.DB.Where("id = ?", userID).First(user)
-	if user.Email == "" {
-		return pkg.ErrNotFound
+	fav := &entities.FavoriteRecipe{
+		UserID:   userID,
+		RecipeID: recipeID,
 	}
-	for _, id := range user.FavouriteRecipeIDs {
-		if id == recipeID {
-			return pkg.ErrExists
-		}
+	if err := r.DB.Create(fav).Error; err != nil {
+		return pkg.ErrDatabase
 	}
-	user.FavouriteRecipeIDs = append(user.FavouriteRecipeIDs, recipeID)
 	return nil
 }
 
 func (r *repo) RemoveRecipeFromFav(userID, recipeID uint) error {
-	user := &User{}
-	r.DB.Where("id = ?", userID).First(user)
-	if user.Email == "" {
-		return pkg.ErrNotFound
+	err := r.DB.Where("user_id = ? and recipe_id = ?", userID, recipeID).Unscoped().Delete(&entities.FavoriteRecipe{}).Error
+	if err != nil {
+		return pkg.ErrDatabase
 	}
-	for idx, id := range user.FavouriteRecipeIDs {
-		if id == recipeID {
-			user.FavouriteRecipeIDs = RemoveIndex(user.FavouriteRecipeIDs, idx)
-			return nil
-		}
-	}
-	return pkg.ErrNotFound
-}
-
-func RemoveIndex(s []uint, index int) []uint {
-	return append(s[:index], s[index+1:]...)
+	return nil
 }

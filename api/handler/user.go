@@ -6,11 +6,14 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/rithikjain/SocialRecipe/api/middleware"
 	"github.com/rithikjain/SocialRecipe/api/view"
+	"github.com/rithikjain/SocialRecipe/pkg"
+	"github.com/rithikjain/SocialRecipe/pkg/entities"
 	"github.com/rithikjain/SocialRecipe/pkg/user"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 )
 
 func register(svc user.Service) http.Handler {
@@ -23,7 +26,7 @@ func register(svc user.Service) http.Handler {
 		_ = r.ParseMultipartForm(10 << 20)
 		_ = r.ParseForm()
 
-		var user user.User
+		var user entities.User
 
 		file, handler, err := r.FormFile("image")
 		if err != nil {
@@ -109,7 +112,7 @@ func login(svc user.Service) http.Handler {
 			view.Wrap(view.ErrMethodNotAllowed, w)
 			return
 		}
-		var user user.User
+		var user entities.User
 		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 			view.Wrap(err, w)
 			return
@@ -166,9 +169,75 @@ func userDetails(svc user.Service) http.Handler {
 	})
 }
 
+// Protected Request
+func addRecipeToFav(svc user.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+
+		recipeIDStr := r.URL.Query().Get("recipe_id")
+		if recipeIDStr == "" {
+			view.Wrap(pkg.ErrNoContent, w)
+			return
+		}
+		recipeID, _ := strconv.Atoi(recipeIDStr)
+		err = svc.AddRecipeToFav(uint(claims["id"].(float64)), uint(recipeID))
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Recipe added to favorites",
+		})
+	})
+}
+
+// Protected Request
+func removeRecipeFromFav(svc user.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+
+		recipeIDStr := r.URL.Query().Get("recipe_id")
+		if recipeIDStr == "" {
+			view.Wrap(pkg.ErrNoContent, w)
+			return
+		}
+		recipeID, _ := strconv.Atoi(recipeIDStr)
+		err = svc.RemoveRecipeFromFav(uint(claims["id"].(float64)), uint(recipeID))
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Recipe removed from favorites",
+		})
+	})
+}
+
 // Handlers
 func MakeUserHandler(r *http.ServeMux, svc user.Service) {
 	r.Handle("/api/v1/user/register", register(svc))
 	r.Handle("/api/v1/user/login", login(svc))
 	r.Handle("/api/v1/user/details", middleware.Validate(userDetails(svc)))
+	r.Handle("/api/v1/user/addrecipetofav", middleware.Validate(addRecipeToFav(svc)))
+	r.Handle("/api/v1/user/removerecipefromfav", middleware.Validate(removeRecipeFromFav(svc)))
 }
