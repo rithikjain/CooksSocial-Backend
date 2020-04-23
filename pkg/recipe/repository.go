@@ -3,6 +3,7 @@ package recipe
 import (
 	"github.com/jinzhu/gorm"
 	"github.com/rithikjain/SocialRecipe/pkg"
+	user2 "github.com/rithikjain/SocialRecipe/pkg/user"
 )
 
 type Repository interface {
@@ -17,6 +18,8 @@ type Repository interface {
 	UnlikeRecipe(recipeID uint) (*Recipe, error)
 
 	GetAllRecipesOfUser(userID uint) (*[]Recipe, error)
+
+	GetUsersFavRecipes(userID uint) (*[]Recipe, error)
 
 	DeleteRecipe(recipeID uint) error
 }
@@ -87,6 +90,20 @@ func (r *repo) UnlikeRecipe(recipeID uint) (*Recipe, error) {
 func (r *repo) GetAllRecipesOfUser(userID uint) (*[]Recipe, error) {
 	var recipes []Recipe
 	err := r.DB.Where("user_id = ?", userID).Find(&recipes).Error
+	if err != nil {
+		return nil, pkg.ErrDatabase
+	}
+	return &recipes, nil
+}
+
+func (r *repo) GetUsersFavRecipes(userID uint) (*[]Recipe, error) {
+	user := &user2.User{}
+	r.DB.Where("id = ?", userID).First(user)
+	if user.Email == "" {
+		return nil, pkg.ErrNotFound
+	}
+	var recipes []Recipe
+	err := r.DB.Where(user.FavouriteRecipeIDs).Find(&recipes).Error
 	if err != nil {
 		return nil, pkg.ErrDatabase
 	}

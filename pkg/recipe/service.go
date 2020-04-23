@@ -13,6 +13,8 @@ type Service interface {
 
 	GetAllRecipesOfUser(userID uint) (*[]Recipe, error)
 
+	ShowUsersFavRecipes(userID uint) (*[]Recipe, error)
+
 	DeleteRecipe(recipeID uint) error
 }
 
@@ -48,6 +50,10 @@ func (s *service) UnlikeRecipe(recipeID uint) (*Recipe, error) {
 
 func (s *service) GetAllRecipesOfUser(userID uint) (*[]Recipe, error) {
 	return s.repo.GetAllRecipesOfUser(userID)
+}
+
+func (s *service) ShowUsersFavRecipes(userID uint) (*[]Recipe, error) {
+	return s.repo.GetUsersFavRecipes(userID)
 }
 
 func (s *service) DeleteRecipe(recipeID uint) error {

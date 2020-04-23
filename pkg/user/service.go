@@ -13,6 +13,10 @@ type Service interface {
 
 	GetUserByID(id uint) (*User, error)
 
+	AddRecipeToFav(userID, recipeID uint) error
+
+	RemoveRecipeFromFav(userID, recipeID uint) error
+
 	GetRepo() Repository
 }
 
@@ -74,6 +78,14 @@ func (s *service) Login(email, password string) (*User, error) {
 
 func (s *service) GetUserByID(id uint) (*User, error) {
 	return s.repo.FindByID(id)
+}
+
+func (s *service) AddRecipeToFav(userID, recipeID uint) error {
+	return s.repo.AddRecipeToFav(userID, recipeID)
+}
+
+func (s *service) RemoveRecipeFromFav(userID, recipeID uint) error {
+	return s.repo.RemoveRecipeFromFav(userID, recipeID)
 }
 
 func (s *service) GetRepo() Repository {
