@@ -464,6 +464,46 @@ func showUsersWhoLiked(svc recipe.Service) http.Handler {
 	})
 }
 
+// Protected Request
+func showUserFeed(svc recipe.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		// Get user id from claims
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		userID := uint(claims["id"].(float64))
+
+		var pageNo = 1
+		pageNoStr := r.URL.Query().Get("page")
+		if pageNoStr != "" {
+			pageNo, _ = strconv.Atoi(pageNoStr)
+		}
+
+		page, err := svc.ShowUserFeed(userID, pageNo)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message":     "Recipes fetched",
+			"recipes":     page.Records,
+			"page":        page.Page,
+			"next_page":   page.NextPage,
+			"prev_page":   page.PrevPage,
+			"total_pages": page.TotalPage,
+		})
+	})
+}
+
 func format(encStr string, mime string) string {
 	switch mime {
 	case "image/gif", "image/jpeg", "image/pjpeg", "image/png", "image/tiff":
@@ -480,6 +520,7 @@ func MakeRecipeHandler(r *http.ServeMux, svc recipe.Service) {
 	r.Handle("/api/v1/recipe/delete", middleware.Validate(deleteRecipe(svc)))
 	r.Handle("/api/v1/recipe/viewofuser", middleware.Validate(showAllRecipesOfUser(svc)))
 	r.Handle("/api/v1/recipe/viewmine", middleware.Validate(showMyRecipes(svc)))
+	r.Handle("/api/v1/recipe/viewmyfeed", middleware.Validate(showUserFeed(svc)))
 	r.Handle("/api/v1/recipe/viewmyfav", middleware.Validate(showMyFavRecipes(svc)))
 	r.Handle("/api/v1/recipe/like", middleware.Validate(likeRecipe(svc)))
 	r.Handle("/api/v1/recipe/unlike", middleware.Validate(unlikeRecipe(svc)))

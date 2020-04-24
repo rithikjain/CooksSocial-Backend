@@ -24,6 +24,8 @@ type Service interface {
 
 	ShowUsersFavRecipes(userID uint, pageNo int) (*pagination.Paginator, error)
 
+	ShowUserFeed(userID uint, pageNo int) (*pagination.Paginator, error)
+
 	DeleteRecipe(recipeID uint) error
 }
 
@@ -71,6 +73,10 @@ func (s *service) GetAllRecipesOfUser(userID uint, pageNo int) (*pagination.Pagi
 
 func (s *service) ShowUsersFavRecipes(userID uint, pageNo int) (*pagination.Paginator, error) {
 	return s.repo.GetUsersFavRecipes(userID, pageNo)
+}
+
+func (s *service) ShowUserFeed(userID uint, pageNo int) (*pagination.Paginator, error) {
+	return s.repo.ShowUserFeed(userID, pageNo)
 }
 
 func (s *service) DeleteRecipe(recipeID uint) error {
