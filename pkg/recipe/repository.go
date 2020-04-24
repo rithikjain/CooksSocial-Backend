@@ -12,6 +12,8 @@ type Repository interface {
 
 	UpdateRecipe(recipe *entities.Recipe) (*entities.Recipe, error)
 
+	FindUserByID(id uint) (*entities.User, error)
+
 	FindRecipeByID(recipeID uint) (*entities.Recipe, error)
 
 	LikeRecipe(userID, recipeID uint) error
@@ -51,6 +53,15 @@ func (r *repo) UpdateRecipe(recipe *entities.Recipe) (*entities.Recipe, error) {
 		return nil, pkg.ErrDatabase
 	}
 	return recipe, nil
+}
+
+func (r *repo) FindUserByID(id uint) (*entities.User, error) {
+	user := &entities.User{}
+	r.DB.Where("id = ?", id).First(user)
+	if user.Email == "" {
+		return nil, pkg.ErrNotFound
+	}
+	return user, nil
 }
 
 func (r *repo) FindRecipeByID(recipeID uint) (*entities.Recipe, error) {

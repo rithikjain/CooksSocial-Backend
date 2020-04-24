@@ -11,6 +11,8 @@ type Recipe struct {
 	Procedure   string       `json:"procedure"`
 	ImgUrl      string       `json:"img_url"`
 	ImgPublicId string       `json:"-"`
+	Username    string       `json:"username"`
+	UserImg     string       `json:"user_img"`
 	Likes       int          `json:"likes"`
 	LikeDetails []LikeDetail `json:"-" gorm:"foreignkey:RecipeID"`
 }

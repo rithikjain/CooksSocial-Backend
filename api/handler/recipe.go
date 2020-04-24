@@ -73,6 +73,12 @@ func createRecipe(svc recipe.Service) http.Handler {
 			return
 		}
 
+		us, err := svc.FindUserByID(userID)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+
 		difficulty, _ := strconv.Atoi(r.FormValue("difficulty"))
 		recipe := &entities.Recipe{
 			UserID:      userID,
@@ -82,6 +88,8 @@ func createRecipe(svc recipe.Service) http.Handler {
 			Procedure:   r.FormValue("procedure"),
 			ImgUrl:      resJson["secure_url"].(string),
 			ImgPublicId: resJson["public_id"].(string),
+			Username:    us.Username,
+			UserImg:     us.ProfileImgUrl,
 		}
 		rec, err := svc.CreateRecipe(recipe)
 		if err != nil {

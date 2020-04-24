@@ -10,6 +10,8 @@ type Service interface {
 
 	UpdateRecipe(recipe *entities.Recipe) (*entities.Recipe, error)
 
+	FindUserByID(id uint) (*entities.User, error)
+
 	FindRecipeByID(recipeID uint) (*entities.Recipe, error)
 
 	LikeRecipe(userID, recipeID uint) error
@@ -41,6 +43,10 @@ func (s *service) CreateRecipe(recipe *entities.Recipe) (*entities.Recipe, error
 
 func (s *service) UpdateRecipe(recipe *entities.Recipe) (*entities.Recipe, error) {
 	return s.repo.UpdateRecipe(recipe)
+}
+
+func (s *service) FindUserByID(id uint) (*entities.User, error) {
+	return s.repo.FindUserByID(id)
 }
 
 func (s *service) FindRecipeByID(recipeID uint) (*entities.Recipe, error) {
