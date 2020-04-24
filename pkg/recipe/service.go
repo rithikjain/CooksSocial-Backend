@@ -1,6 +1,9 @@
 package recipe
 
-import "github.com/rithikjain/SocialRecipe/pkg/entities"
+import (
+	"github.com/biezhi/gorm-paginator/pagination"
+	"github.com/rithikjain/SocialRecipe/pkg/entities"
+)
 
 type Service interface {
 	CreateRecipe(recipe *entities.Recipe) (*entities.Recipe, error)
@@ -13,11 +16,11 @@ type Service interface {
 
 	UnlikeRecipe(userID, recipeID uint) error
 
-	ShowUsersWhoLiked(recipeID uint) (*[]entities.User, error)
+	ShowUsersWhoLiked(recipeID uint, pageNo int) (*pagination.Paginator, error)
 
-	GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error)
+	GetAllRecipesOfUser(userID uint, pageNo int) (*pagination.Paginator, error)
 
-	ShowUsersFavRecipes(userID uint) (*[]entities.Recipe, error)
+	ShowUsersFavRecipes(userID uint, pageNo int) (*pagination.Paginator, error)
 
 	DeleteRecipe(recipeID uint) error
 }
@@ -52,16 +55,16 @@ func (s *service) UnlikeRecipe(userID, recipeID uint) error {
 	return s.repo.UnlikeRecipe(userID, recipeID)
 }
 
-func (s *service) ShowUsersWhoLiked(recipeID uint) (*[]entities.User, error) {
-	return s.repo.GetUsersWhoLiked(recipeID)
+func (s *service) ShowUsersWhoLiked(recipeID uint, pageNo int) (*pagination.Paginator, error) {
+	return s.repo.GetUsersWhoLiked(recipeID, pageNo)
 }
 
-func (s *service) GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error) {
-	return s.repo.GetAllRecipesOfUser(userID)
+func (s *service) GetAllRecipesOfUser(userID uint, pageNo int) (*pagination.Paginator, error) {
+	return s.repo.GetAllRecipesOfUser(userID, pageNo)
 }
 
-func (s *service) ShowUsersFavRecipes(userID uint) (*[]entities.Recipe, error) {
-	return s.repo.GetUsersFavRecipes(userID)
+func (s *service) ShowUsersFavRecipes(userID uint, pageNo int) (*pagination.Paginator, error) {
+	return s.repo.GetUsersFavRecipes(userID, pageNo)
 }
 
 func (s *service) DeleteRecipe(recipeID uint) error {

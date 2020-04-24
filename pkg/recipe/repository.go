@@ -1,6 +1,7 @@
 package recipe
 
 import (
+	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/jinzhu/gorm"
 	"github.com/rithikjain/SocialRecipe/pkg"
 	"github.com/rithikjain/SocialRecipe/pkg/entities"
@@ -17,11 +18,11 @@ type Repository interface {
 
 	UnlikeRecipe(userID, recipeID uint) error
 
-	GetUsersWhoLiked(recipeID uint) (*[]entities.User, error)
+	GetUsersWhoLiked(recipeID uint, pageNo int) (*pagination.Paginator, error)
 
-	GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error)
+	GetAllRecipesOfUser(userID uint, pageNo int) (*pagination.Paginator, error)
 
-	GetUsersFavRecipes(userID uint) (*[]entities.Recipe, error)
+	GetUsersFavRecipes(userID uint, pageNo int) (*pagination.Paginator, error)
 
 	DeleteRecipe(recipeID uint) error
 }
@@ -104,7 +105,7 @@ func (r *repo) UnlikeRecipe(userID, recipeID uint) error {
 	return nil
 }
 
-func (r *repo) GetUsersWhoLiked(recipeID uint) (*[]entities.User, error) {
+func (r *repo) GetUsersWhoLiked(recipeID uint, pageNo int) (*pagination.Paginator, error) {
 	var likes []entities.LikeDetail
 	if err := r.DB.Where("recipe_id = ?", recipeID).Find(&likes).Error; err != nil {
 		return nil, pkg.ErrDatabase
@@ -116,23 +117,29 @@ func (r *repo) GetUsersWhoLiked(recipeID uint) (*[]entities.User, error) {
 	}
 
 	var users []entities.User
-	er := r.DB.Where(userIDs).Find(&users).Error
-	if er != nil {
-		return nil, pkg.ErrDatabase
-	}
-	return &users, nil
+	stmt := r.DB.Where(userIDs)
+	page := pagination.Paging(&pagination.Param{
+		DB:      stmt,
+		Page:    pageNo,
+		Limit:   10,
+		OrderBy: []string{"created_at desc"},
+	}, &users)
+	return page, nil
 }
 
-func (r *repo) GetAllRecipesOfUser(userID uint) (*[]entities.Recipe, error) {
+func (r *repo) GetAllRecipesOfUser(userID uint, pageNo int) (*pagination.Paginator, error) {
 	var recipes []entities.Recipe
-	err := r.DB.Where("user_id = ?", userID).Find(&recipes).Error
-	if err != nil {
-		return nil, pkg.ErrDatabase
-	}
-	return &recipes, nil
+	stmt := r.DB.Where("user_id = ?", userID)
+	page := pagination.Paging(&pagination.Param{
+		DB:      stmt,
+		Page:    pageNo,
+		Limit:   7,
+		OrderBy: []string{"created_at desc"},
+	}, &recipes)
+	return page, nil
 }
 
-func (r *repo) GetUsersFavRecipes(userID uint) (*[]entities.Recipe, error) {
+func (r *repo) GetUsersFavRecipes(userID uint, pageNo int) (*pagination.Paginator, error) {
 	var favs []entities.FavoriteRecipe
 	err := r.DB.Where("user_id = ?", userID).Find(&favs).Error
 
@@ -146,11 +153,14 @@ func (r *repo) GetUsersFavRecipes(userID uint) (*[]entities.Recipe, error) {
 	}
 
 	var recipes []entities.Recipe
-	er := r.DB.Where(favouriteRecipeIDs).Find(&recipes).Error
-	if er != nil {
-		return nil, pkg.ErrDatabase
-	}
-	return &recipes, nil
+	stmt := r.DB.Where(favouriteRecipeIDs)
+	page := pagination.Paging(&pagination.Param{
+		DB:      stmt,
+		Page:    pageNo,
+		Limit:   7,
+		OrderBy: []string{"created_at desc"},
+	}, &recipes)
+	return page, nil
 }
 
 func (r *repo) DeleteRecipe(recipeID uint) error {

@@ -256,15 +256,25 @@ func showAllRecipesOfUser(svc recipe.Service) http.Handler {
 		userIDStr := r.URL.Query().Get("user_id")
 		userID, _ := strconv.Atoi(userIDStr)
 
-		recipes, err := svc.GetAllRecipesOfUser(uint(userID))
+		var pageNo = 1
+		pageNoStr := r.URL.Query().Get("page")
+		if pageNoStr != "" {
+			pageNo, _ = strconv.Atoi(pageNoStr)
+		}
+
+		page, err := svc.GetAllRecipesOfUser(uint(userID), pageNo)
 		if err != nil {
 			view.Wrap(err, w)
 			return
 		}
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Recipes fetched",
-			"recipes": recipes,
+			"message":     "Recipes fetched",
+			"recipes":     page.Records,
+			"page":        page.Page,
+			"next_page":   page.NextPage,
+			"prev_page":   page.PrevPage,
+			"total_pages": page.TotalPage,
 		})
 	})
 }
@@ -285,15 +295,25 @@ func showMyRecipes(svc recipe.Service) http.Handler {
 		}
 		userID := uint(claims["id"].(float64))
 
-		recipes, err := svc.GetAllRecipesOfUser(userID)
+		var pageNo = 1
+		pageNoStr := r.URL.Query().Get("page")
+		if pageNoStr != "" {
+			pageNo, _ = strconv.Atoi(pageNoStr)
+		}
+
+		page, err := svc.GetAllRecipesOfUser(userID, pageNo)
 		if err != nil {
 			view.Wrap(err, w)
 			return
 		}
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Recipes fetched",
-			"recipes": recipes,
+			"message":     "Recipes fetched",
+			"recipes":     page.Records,
+			"page":        page.Page,
+			"next_page":   page.NextPage,
+			"prev_page":   page.PrevPage,
+			"total_pages": page.TotalPage,
 		})
 	})
 }
@@ -313,7 +333,13 @@ func showMyFavRecipes(svc recipe.Service) http.Handler {
 		}
 		userID := uint(claims["id"].(float64))
 
-		recipes, err := svc.ShowUsersFavRecipes(userID)
+		var pageNo = 1
+		pageNoStr := r.URL.Query().Get("page")
+		if pageNoStr != "" {
+			pageNo, _ = strconv.Atoi(pageNoStr)
+		}
+
+		page, err := svc.ShowUsersFavRecipes(userID, pageNo)
 		if err != nil {
 			view.Wrap(err, w)
 			return
@@ -321,8 +347,12 @@ func showMyFavRecipes(svc recipe.Service) http.Handler {
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Favorite recipes fetched",
-			"recipes": recipes,
+			"message":     "Favorite recipes fetched",
+			"recipes":     page.Records,
+			"page":        page.Page,
+			"next_page":   page.NextPage,
+			"prev_page":   page.PrevPage,
+			"total_pages": page.TotalPage,
 		})
 	})
 }
@@ -402,7 +432,13 @@ func showUsersWhoLiked(svc recipe.Service) http.Handler {
 		recipeIDStr := r.URL.Query().Get("recipe_id")
 		recipeID, _ := strconv.Atoi(recipeIDStr)
 
-		users, err := svc.ShowUsersWhoLiked(uint(recipeID))
+		var pageNo = 1
+		pageNoStr := r.URL.Query().Get("page")
+		if pageNoStr != "" {
+			pageNo, _ = strconv.Atoi(pageNoStr)
+		}
+
+		page, err := svc.ShowUsersWhoLiked(uint(recipeID), pageNo)
 		if err != nil {
 			view.Wrap(err, w)
 			return
@@ -410,8 +446,12 @@ func showUsersWhoLiked(svc recipe.Service) http.Handler {
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Users fetched",
-			"users":   users,
+			"message":     "Users fetched",
+			"users":       page.Records,
+			"page":        page.Page,
+			"next_page":   page.NextPage,
+			"prev_page":   page.PrevPage,
+			"total_pages": page.TotalPage,
 		})
 	})
 }
