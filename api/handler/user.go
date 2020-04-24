@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func register(svc user.Service) http.Handler {
@@ -376,6 +377,49 @@ func viewFollowing(svc user.Service) http.Handler {
 	})
 }
 
+// Protected Request
+func searchUsers(svc user.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		userID := uint(claims["id"].(float64))
+		query := r.URL.Query().Get("query")
+		if query == "" {
+			view.Wrap(pkg.ErrNoContent, w)
+			return
+		}
+		query = strings.ToLower(query)
+		var pageNo = 1
+		pageNoStr := r.URL.Query().Get("page")
+		if pageNoStr != "" {
+			pageNo, _ = strconv.Atoi(pageNoStr)
+		}
+
+		page, err := svc.SearchUsers(userID, query, pageNo)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message":     "Users fetched",
+			"users":       page.Records,
+			"page":        page.Page,
+			"next_page":   page.NextPage,
+			"prev_page":   page.PrevPage,
+			"total_pages": page.TotalPage,
+		})
+	})
+}
+
 // Handlers
 func MakeUserHandler(r *http.ServeMux, svc user.Service) {
 	r.Handle("/api/v1/user/register", register(svc))
@@ -387,4 +431,5 @@ func MakeUserHandler(r *http.ServeMux, svc user.Service) {
 	r.Handle("/api/v1/user/unfollow", middleware.Validate(unFollowUser(svc)))
 	r.Handle("/api/v1/user/viewfollowers", middleware.Validate(viewFollowers(svc)))
 	r.Handle("/api/v1/user/viewfollowing", middleware.Validate(viewFollowing(svc)))
+	r.Handle("/api/v1/user/search", middleware.Validate(searchUsers(svc)))
 }

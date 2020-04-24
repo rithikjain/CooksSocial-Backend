@@ -26,7 +26,9 @@ type Repository interface {
 
 	GetUsersFavRecipes(userID uint, pageNo int) (*pagination.Paginator, error)
 
-	ShowUserFeed(userID uint, pageNo int) (*pagination.Paginator, error)
+	GetUserFeed(userID uint, pageNo int) (*pagination.Paginator, error)
+
+	GetAllLatestRecipes(pageNo int) (*pagination.Paginator, error)
 
 	DeleteRecipe(recipeID uint) error
 }
@@ -176,7 +178,7 @@ func (r *repo) GetUsersFavRecipes(userID uint, pageNo int) (*pagination.Paginato
 	return page, nil
 }
 
-func (r *repo) ShowUserFeed(userID uint, pageNo int) (*pagination.Paginator, error) {
+func (r *repo) GetUserFeed(userID uint, pageNo int) (*pagination.Paginator, error) {
 	var followings []entities.Following
 	if err := r.DB.Where("user_id = ?", userID).Find(&followings).Error; err != nil {
 		return nil, pkg.ErrDatabase
@@ -189,6 +191,18 @@ func (r *repo) ShowUserFeed(userID uint, pageNo int) (*pagination.Paginator, err
 
 	var recipes []entities.Recipe
 	stmt := r.DB.Where("user_id in (?)", otherUserIDs)
+	page := pagination.Paging(&pagination.Param{
+		DB:      stmt,
+		Page:    pageNo,
+		Limit:   7,
+		OrderBy: []string{"created_at desc"},
+	}, &recipes)
+	return page, nil
+}
+
+func (r *repo) GetAllLatestRecipes(pageNo int) (*pagination.Paginator, error) {
+	var recipes []entities.Recipe
+	stmt := r.DB
 	page := pagination.Paging(&pagination.Param{
 		DB:      stmt,
 		Page:    pageNo,

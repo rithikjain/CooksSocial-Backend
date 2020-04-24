@@ -26,6 +26,8 @@ type Repository interface {
 
 	ViewFollowing(userID uint, pageNo int) (*pagination.Paginator, error)
 
+	SearchUsers(userID uint, query string, pageNo int) (*pagination.Paginator, error)
+
 	RemoveRecipeFromFav(userID, recipeID uint) error
 }
 
@@ -194,6 +196,18 @@ func (r *repo) ViewFollowing(userID uint, pageNo int) (*pagination.Paginator, er
 
 	var users []entities.User
 	stmt := r.DB.Where(otherUserIDs)
+	page := pagination.Paging(&pagination.Param{
+		DB:      stmt,
+		Page:    pageNo,
+		Limit:   10,
+		OrderBy: []string{"created_at desc"},
+	}, &users)
+	return page, nil
+}
+
+func (r *repo) SearchUsers(userID uint, query string, pageNo int) (*pagination.Paginator, error) {
+	var users []entities.User
+	stmt := r.DB.Not("id = ?", userID).Where("lower(username) LIKE ? or lower(name) LIKE ?", "%"+query+"%", "%"+query+"%")
 	page := pagination.Paging(&pagination.Param{
 		DB:      stmt,
 		Page:    pageNo,

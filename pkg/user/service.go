@@ -27,6 +27,8 @@ type Service interface {
 
 	ViewFollowing(userID uint, pageNo int) (*pagination.Paginator, error)
 
+	SearchUsers(userID uint, query string, pageNo int) (*pagination.Paginator, error)
+
 	GetRepo() Repository
 }
 
@@ -112,6 +114,10 @@ func (s *service) ViewFollowers(userID uint, pageNo int) (*pagination.Paginator,
 
 func (s *service) ViewFollowing(userID uint, pageNo int) (*pagination.Paginator, error) {
 	return s.repo.ViewFollowing(userID, pageNo)
+}
+
+func (s *service) SearchUsers(userID uint, query string, pageNo int) (*pagination.Paginator, error) {
+	return s.repo.SearchUsers(userID, query, pageNo)
 }
 
 func (s *service) GetRepo() Repository {
