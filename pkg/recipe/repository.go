@@ -30,6 +30,8 @@ type Repository interface {
 
 	GetAllLatestRecipes(pageNo int) (*pagination.Paginator, error)
 
+	SearchRecipes(query string, pageNo int) (*pagination.Paginator, error)
+
 	DeleteRecipe(recipeID uint) error
 }
 
@@ -203,6 +205,18 @@ func (r *repo) GetUserFeed(userID uint, pageNo int) (*pagination.Paginator, erro
 func (r *repo) GetAllLatestRecipes(pageNo int) (*pagination.Paginator, error) {
 	var recipes []entities.Recipe
 	stmt := r.DB
+	page := pagination.Paging(&pagination.Param{
+		DB:      stmt,
+		Page:    pageNo,
+		Limit:   7,
+		OrderBy: []string{"created_at desc"},
+	}, &recipes)
+	return page, nil
+}
+
+func (r *repo) SearchRecipes(query string, pageNo int) (*pagination.Paginator, error) {
+	var recipes []entities.Recipe
+	stmt := r.DB.Where("lower(recipe_name) LIKE ?", "%"+query+"%")
 	page := pagination.Paging(&pagination.Param{
 		DB:      stmt,
 		Page:    pageNo,

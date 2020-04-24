@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // Protected Request
@@ -523,7 +524,44 @@ func showAllLatestRecipes(svc recipe.Service) http.Handler {
 			view.Wrap(err, w)
 			return
 		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message":     "Recipes fetched",
+			"recipes":     page.Records,
+			"page":        page.Page,
+			"next_page":   page.NextPage,
+			"prev_page":   page.PrevPage,
+			"total_pages": page.TotalPage,
+		})
+	})
+}
 
+// Protected Request
+func searchRecipes(svc recipe.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		var pageNo = 1
+		pageNoStr := r.URL.Query().Get("page")
+		if pageNoStr != "" {
+			pageNo, _ = strconv.Atoi(pageNoStr)
+		}
+
+		query := r.URL.Query().Get("query")
+		if query == "" {
+			view.Wrap(pkg.ErrNoContent, w)
+			return
+		}
+		query = strings.ToLower(query)
+
+		page, err := svc.SearchRecipes(query, pageNo)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"message":     "Recipes fetched",
@@ -558,4 +596,5 @@ func MakeRecipeHandler(r *http.ServeMux, svc recipe.Service) {
 	r.Handle("/api/v1/recipe/like", middleware.Validate(likeRecipe(svc)))
 	r.Handle("/api/v1/recipe/unlike", middleware.Validate(unlikeRecipe(svc)))
 	r.Handle("/api/v1/recipe/viewuserlikes", middleware.Validate(showUsersWhoLiked(svc)))
+	r.Handle("/api/v1/recipe/search", middleware.Validate(searchRecipes(svc)))
 }
