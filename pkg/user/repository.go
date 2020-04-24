@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/jinzhu/gorm"
 	"github.com/rithikjain/SocialRecipe/pkg"
 	"github.com/rithikjain/SocialRecipe/pkg/entities"
@@ -21,9 +22,9 @@ type Repository interface {
 
 	UnFollowUser(userID, otherUserID uint) error
 
-	ViewFollowers(userID uint) (*[]entities.User, error)
+	ViewFollowers(userID uint, pageNo int) (*pagination.Paginator, error)
 
-	ViewFollowing(userID uint) (*[]entities.User, error)
+	ViewFollowing(userID uint, pageNo int) (*pagination.Paginator, error)
 
 	RemoveRecipeFromFav(userID, recipeID uint) error
 }
@@ -158,7 +159,7 @@ func (r *repo) UnFollowUser(userID, otherUserID uint) error {
 	return nil
 }
 
-func (r *repo) ViewFollowers(userID uint) (*[]entities.User, error) {
+func (r *repo) ViewFollowers(userID uint, pageNo int) (*pagination.Paginator, error) {
 	var followers []entities.Follower
 	if err := r.DB.Where("user_id = ?", userID).Find(&followers).Error; err != nil {
 		return nil, pkg.ErrDatabase
@@ -170,14 +171,17 @@ func (r *repo) ViewFollowers(userID uint) (*[]entities.User, error) {
 	}
 
 	var users []entities.User
-	er := r.DB.Where(otherUserIDs).Find(&users).Error
-	if er != nil {
-		return nil, pkg.ErrDatabase
-	}
-	return &users, nil
+	stmt := r.DB.Where(otherUserIDs)
+	page := pagination.Paging(&pagination.Param{
+		DB:      stmt,
+		Page:    pageNo,
+		Limit:   10,
+		OrderBy: []string{"created_at desc"},
+	}, &users)
+	return page, nil
 }
 
-func (r *repo) ViewFollowing(userID uint) (*[]entities.User, error) {
+func (r *repo) ViewFollowing(userID uint, pageNo int) (*pagination.Paginator, error) {
 	var followings []entities.Following
 	if err := r.DB.Where("user_id = ?", userID).Find(&followings).Error; err != nil {
 		return nil, pkg.ErrDatabase
@@ -189,11 +193,14 @@ func (r *repo) ViewFollowing(userID uint) (*[]entities.User, error) {
 	}
 
 	var users []entities.User
-	er := r.DB.Where(otherUserIDs).Find(&users).Error
-	if er != nil {
-		return nil, pkg.ErrDatabase
-	}
-	return &users, nil
+	stmt := r.DB.Where(otherUserIDs)
+	page := pagination.Paging(&pagination.Param{
+		DB:      stmt,
+		Page:    pageNo,
+		Limit:   10,
+		OrderBy: []string{"created_at desc"},
+	}, &users)
+	return page, nil
 }
 
 func (r *repo) RemoveRecipeFromFav(userID, recipeID uint) error {

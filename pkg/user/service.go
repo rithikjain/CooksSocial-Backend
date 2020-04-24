@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/rithikjain/SocialRecipe/pkg"
 	"github.com/rithikjain/SocialRecipe/pkg/entities"
 	"golang.org/x/crypto/bcrypt"
@@ -22,9 +23,9 @@ type Service interface {
 
 	UnFollowUser(userID, otherUserID uint) error
 
-	ViewFollowers(userID uint) (*[]entities.User, error)
+	ViewFollowers(userID uint, pageNo int) (*pagination.Paginator, error)
 
-	ViewFollowing(userID uint) (*[]entities.User, error)
+	ViewFollowing(userID uint, pageNo int) (*pagination.Paginator, error)
 
 	GetRepo() Repository
 }
@@ -105,12 +106,12 @@ func (s *service) UnFollowUser(userID, otherUserID uint) error {
 	return s.repo.UnFollowUser(userID, otherUserID)
 }
 
-func (s *service) ViewFollowers(userID uint) (*[]entities.User, error) {
-	return s.repo.ViewFollowers(userID)
+func (s *service) ViewFollowers(userID uint, pageNo int) (*pagination.Paginator, error) {
+	return s.repo.ViewFollowers(userID, pageNo)
 }
 
-func (s *service) ViewFollowing(userID uint) (*[]entities.User, error) {
-	return s.repo.ViewFollowing(userID)
+func (s *service) ViewFollowing(userID uint, pageNo int) (*pagination.Paginator, error) {
+	return s.repo.ViewFollowing(userID, pageNo)
 }
 
 func (s *service) GetRepo() Repository {

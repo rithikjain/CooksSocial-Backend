@@ -308,22 +308,32 @@ func viewFollowers(svc user.Service) http.Handler {
 			return
 		}
 
-		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
-		if err != nil {
-			view.Wrap(err, w)
+		userIDStr := r.URL.Query().Get("user_id")
+		if userIDStr == "" {
+			view.Wrap(pkg.ErrNoContent, w)
 			return
 		}
-		userID := uint(claims["id"].(float64))
+		userID, _ := strconv.Atoi(userIDStr)
 
-		users, err := svc.ViewFollowers(userID)
+		var pageNo = 1
+		pageNoStr := r.URL.Query().Get("page")
+		if pageNoStr != "" {
+			pageNo, _ = strconv.Atoi(pageNoStr)
+		}
+
+		page, err := svc.ViewFollowers(uint(userID), pageNo)
 		if err != nil {
 			view.Wrap(err, w)
 			return
 		}
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Users fetched",
-			"users":   users,
+			"message":     "Users fetched",
+			"users":       page.Records,
+			"page":        page.Page,
+			"next_page":   page.NextPage,
+			"prev_page":   page.PrevPage,
+			"total_pages": page.TotalPage,
 		})
 	})
 }
@@ -336,22 +346,32 @@ func viewFollowing(svc user.Service) http.Handler {
 			return
 		}
 
-		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
-		if err != nil {
-			view.Wrap(err, w)
+		userIDStr := r.URL.Query().Get("user_id")
+		if userIDStr == "" {
+			view.Wrap(pkg.ErrNoContent, w)
 			return
 		}
-		userID := uint(claims["id"].(float64))
+		userID, _ := strconv.Atoi(userIDStr)
 
-		users, err := svc.ViewFollowing(userID)
+		var pageNo = 1
+		pageNoStr := r.URL.Query().Get("page")
+		if pageNoStr != "" {
+			pageNo, _ = strconv.Atoi(pageNoStr)
+		}
+
+		page, err := svc.ViewFollowing(uint(userID), pageNo)
 		if err != nil {
 			view.Wrap(err, w)
 			return
 		}
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Users fetched",
-			"users":   users,
+			"message":     "Users fetched",
+			"users":       page.Records,
+			"page":        page.Page,
+			"next_page":   page.NextPage,
+			"prev_page":   page.PrevPage,
+			"total_pages": page.TotalPage,
 		})
 	})
 }
