@@ -34,6 +34,7 @@ func register(svc user.Service) http.Handler {
 			user.Name = r.FormValue("name")
 			user.PhoneNumber = r.FormValue("phone_number")
 			user.Email = r.FormValue("email")
+			user.Username = r.FormValue("username")
 			user.Password = r.FormValue("password")
 			user.ProfileImgUrl = "https://res.cloudinary.com/dvn1hxflu/image/upload/v1587624171/blank-profile-picture-973460_640_bgnkjn.png"
 			user.ProfileImgPublicID = ""
