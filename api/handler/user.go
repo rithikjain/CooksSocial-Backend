@@ -29,6 +29,37 @@ func register(svc user.Service) http.Handler {
 
 		var user entities.User
 
+		email := r.FormValue("email")
+		username := r.FormValue("username")
+
+		exist, err := svc.DoesEmailExist(email)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		if exist {
+			w.Header().Add("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "Email exists",
+			})
+			return
+		}
+
+		exist, err = svc.DoesUsernameExist(username)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		if exist {
+			w.Header().Add("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "Username exists",
+			})
+			return
+		}
+
 		file, handler, err := r.FormFile("image")
 		if err != nil {
 			user.Name = r.FormValue("name")

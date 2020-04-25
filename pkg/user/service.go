@@ -13,6 +13,10 @@ type Service interface {
 
 	Login(email, password string) (*entities.User, error)
 
+	DoesEmailExist(email string) (bool, error)
+
+	DoesUsernameExist(username string) (bool, error)
+
 	GetUserByID(id uint) (*entities.User, error)
 
 	AddRecipeToFav(userID, recipeID uint) error
@@ -53,6 +57,14 @@ func Validate(user *entities.User) (bool, error) {
 	return true, nil
 }
 
+func (s *service) DoesEmailExist(email string) (bool, error) {
+	return s.repo.DoesEmailExist(email)
+}
+
+func (s *service) DoesUsernameExist(username string) (bool, error) {
+	return s.repo.DoesUsernameExist(username)
+}
+
 func (s *service) Register(user *entities.User) (*entities.User, error) {
 	// Validation
 	validate, err := Validate(user)
@@ -60,14 +72,6 @@ func (s *service) Register(user *entities.User) (*entities.User, error) {
 		return nil, err
 	}
 
-	exists, err := s.repo.DoesEmailExist(user.Email)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		//noinspection GoErrorStringFormat
-		return nil, pkg.ErrExists
-	}
 	pass, err := HashPassword(user.Password)
 	if err != nil {
 		return nil, err

@@ -16,6 +16,8 @@ type Repository interface {
 
 	DoesEmailExist(email string) (bool, error)
 
+	DoesUsernameExist(username string) (bool, error)
+
 	AddRecipeToFav(userID, recipeID uint) error
 
 	FollowUser(userID, otherUserID uint) error
@@ -61,6 +63,14 @@ func (r *repo) Register(user *entities.User) (*entities.User, error) {
 func (r *repo) DoesEmailExist(email string) (bool, error) {
 	user := &entities.User{}
 	if r.DB.Where("email = ?", email).First(user).RecordNotFound() {
+		return false, nil
+	}
+	return true, nil
+}
+
+func (r *repo) DoesUsernameExist(username string) (bool, error) {
+	user := &entities.User{}
+	if r.DB.Where("username = ?", username).First(user).RecordNotFound() {
 		return false, nil
 	}
 	return true, nil
