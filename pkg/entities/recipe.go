@@ -7,6 +7,7 @@ type Recipe struct {
 	UserID      uint         `json:"user_id"`
 	RecipeName  string       `json:"recipe_name"`
 	Description string       `json:"description"`
+	Ingredients string       `json:"ingredients"`
 	Difficulty  int          `json:"difficulty"`
 	Procedure   string       `json:"procedure"`
 	ImgUrl      string       `json:"img_url"`

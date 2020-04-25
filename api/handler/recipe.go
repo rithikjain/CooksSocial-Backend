@@ -85,6 +85,7 @@ func createRecipe(svc recipe.Service) http.Handler {
 			UserID:      userID,
 			RecipeName:  r.FormValue("recipe_name"),
 			Description: r.FormValue("description"),
+			Ingredients: r.FormValue("ingredients"),
 			Difficulty:  difficulty,
 			Procedure:   r.FormValue("procedure"),
 			ImgUrl:      resJson["secure_url"].(string),
@@ -173,6 +174,7 @@ func updateRecipe(svc recipe.Service) http.Handler {
 		rec.UserID = userID
 		rec.RecipeName = r.FormValue("recipe_name")
 		rec.Description = r.FormValue("description")
+		rec.Ingredients = r.FormValue("ingredients")
 		rec.Difficulty = difficulty
 		rec.Procedure = r.FormValue("procedure")
 		rec.ImgUrl = resJson["secure_url"].(string)
