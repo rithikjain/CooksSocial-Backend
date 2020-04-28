@@ -69,6 +69,7 @@ func register(svc user.Service) http.Handler {
 			user.Password = r.FormValue("password")
 			user.ProfileImgUrl = "https://res.cloudinary.com/dvn1hxflu/image/upload/v1587624171/blank-profile-picture-973460_640_bgnkjn.png"
 			user.ProfileImgPublicID = ""
+			user.Verified = false
 			user.Bio = r.FormValue("bio")
 		} else {
 			defer file.Close()
@@ -112,6 +113,7 @@ func register(svc user.Service) http.Handler {
 			user.Password = r.FormValue("password")
 			user.ProfileImgUrl = resJson["secure_url"].(string)
 			user.ProfileImgPublicID = resJson["public_id"].(string)
+			user.Verified = false
 			user.Bio = r.FormValue("bio")
 		}
 

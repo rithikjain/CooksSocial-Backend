@@ -16,6 +16,7 @@ type User struct {
 	FollowingCount     uint             `json:"following"`
 	FollowersCount     uint             `json:"followers"`
 	Bio                string           `json:"bio"`
+	Verified           bool             `json:"verified"`
 	Recipes            []Recipe         `json:"-" gorm:"foreignkey:UserID"`
 	FavouriteRecipes   []FavoriteRecipe `json:"-" gorm:"foreignkey:UserID"`
 	Following          []Following      `json:"-" gorm:"foreignkey:UserID"`
