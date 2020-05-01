@@ -180,6 +180,124 @@ func login(svc user.Service) http.Handler {
 }
 
 // Protected Request
+func updateProfile(svc user.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+
+		_ = r.ParseMultipartForm(10 << 20)
+		_ = r.ParseForm()
+
+		username := r.FormValue("username")
+		exist, err := svc.DoesUsernameExist(username)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		if exist {
+			w.Header().Add("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "Username exists",
+			})
+			return
+		}
+
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		userID := uint(claims["id"].(float64))
+
+		u, err := svc.GetUserByID(userID)
+
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+
+		var name, un, bio string
+		if r.FormValue("name") == "" {
+			name = u.Name
+		} else {
+			name = r.FormValue("name")
+		}
+		if r.FormValue("username") == "" {
+			un = u.Username
+		} else {
+			un = r.FormValue("username")
+		}
+		if r.FormValue("bio") == "" {
+			bio = u.Bio
+		} else {
+			bio = r.FormValue("bio")
+		}
+
+		file, handler, err := r.FormFile("image")
+		if err != nil {
+			u.Name = name
+			u.Username = un
+			u.Bio = bio
+		} else {
+			defer file.Close()
+
+			fileBytes, err := ioutil.ReadAll(file)
+			if err != nil {
+				view.Wrap(view.ErrFile, w)
+			}
+			imgBase64 := base64.StdEncoding.EncodeToString(fileBytes)
+
+			imgUrl := format(imgBase64, handler.Header.Get("Content-Type"))
+
+			// Uploading the image on cloudinary
+			form := url.Values{}
+			form.Add("file", imgUrl)
+			form.Add("upload_preset", os.Getenv("uploadPreset"))
+
+			response, err := http.PostForm(os.Getenv("cloudinaryUrl"), form)
+			if err != nil {
+				view.Wrap(view.ErrFile, w)
+				return
+			}
+			defer response.Body.Close()
+
+			var resJson map[string]interface{}
+			err = json.NewDecoder(response.Body).Decode(&resJson)
+			if err != nil {
+				view.Wrap(view.ErrUpload, w)
+				return
+			}
+
+			if response.StatusCode != http.StatusOK {
+				view.Wrap(view.ErrUpload, w)
+				return
+			}
+
+			u.Name = name
+			u.Username = un
+			u.ProfileImgUrl = resJson["secure_url"].(string)
+			u.ProfileImgPublicID = resJson["public_id"].(string)
+			u.Bio = bio
+		}
+
+		us, err := svc.UpdateUser(u)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		us.Password = ""
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "User updated",
+			"user":    us,
+		})
+	})
+}
+
+// Protected Request
 func userDetails(svc user.Service) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -489,6 +607,7 @@ func updateBio(svc user.Service) http.Handler {
 func MakeUserHandler(r *http.ServeMux, svc user.Service) {
 	r.Handle("/api/v1/user/register", register(svc))
 	r.Handle("/api/v1/user/login", login(svc))
+	r.Handle("/api/v1/user/updateprofile", middleware.Validate(updateProfile(svc)))
 	r.Handle("/api/v1/user/details", middleware.Validate(userDetails(svc)))
 	r.Handle("/api/v1/user/addrecipetofav", middleware.Validate(addRecipeToFav(svc)))
 	r.Handle("/api/v1/user/removerecipefromfav", middleware.Validate(removeRecipeFromFav(svc)))

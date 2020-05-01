@@ -11,6 +11,8 @@ import (
 type Service interface {
 	Register(user *entities.User) (*entities.User, error)
 
+	UpdateUser(user *entities.User) (*entities.User, error)
+
 	Login(email, password string) (*entities.User, error)
 
 	DoesEmailExist(email string) (bool, error)
@@ -80,6 +82,10 @@ func (s *service) Register(user *entities.User) (*entities.User, error) {
 	}
 	user.Password = pass
 	return s.repo.Register(user)
+}
+
+func (s *service) UpdateUser(user *entities.User) (*entities.User, error) {
+	return s.repo.UpdateUser(user)
 }
 
 func (s *service) Login(email, password string) (*entities.User, error) {

@@ -14,6 +14,8 @@ type Repository interface {
 
 	Register(user *entities.User) (*entities.User, error)
 
+	UpdateUser(user *entities.User) (*entities.User, error)
+
 	DoesEmailExist(email string) (bool, error)
 
 	DoesUsernameExist(username string) (bool, error)
@@ -57,6 +59,14 @@ func (r *repo) FindByID(id uint) (*entities.User, error) {
 func (r *repo) Register(user *entities.User) (*entities.User, error) {
 	result := r.DB.Save(user)
 	if result.Error != nil {
+		return nil, pkg.ErrDatabase
+	}
+	return user, nil
+}
+
+func (r *repo) UpdateUser(user *entities.User) (*entities.User, error) {
+	err := r.DB.Save(user).Error
+	if err != nil {
 		return nil, pkg.ErrDatabase
 	}
 	return user, nil
