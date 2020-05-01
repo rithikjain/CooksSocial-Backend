@@ -454,6 +454,37 @@ func searchUsers(svc user.Service) http.Handler {
 	})
 }
 
+// Protected Request
+func updateBio(svc user.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			view.Wrap(view.ErrMethodNotAllowed, w)
+			return
+		}
+		type Bio struct {
+			Bio string `json:"bio"`
+		}
+		var bioResp Bio
+		_ = json.NewDecoder(r.Body).Decode(&bioResp)
+
+		claims, err := middleware.ValidateAndGetClaims(r.Context(), "user")
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		userID := uint(claims["id"].(float64))
+		err = svc.UpdateUserBio(userID, bioResp.Bio)
+		if err != nil {
+			view.Wrap(err, w)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Bio updated",
+		})
+	})
+}
+
 // Handlers
 func MakeUserHandler(r *http.ServeMux, svc user.Service) {
 	r.Handle("/api/v1/user/register", register(svc))
@@ -466,4 +497,5 @@ func MakeUserHandler(r *http.ServeMux, svc user.Service) {
 	r.Handle("/api/v1/user/viewfollowers", middleware.Validate(viewFollowers(svc)))
 	r.Handle("/api/v1/user/viewfollowing", middleware.Validate(viewFollowing(svc)))
 	r.Handle("/api/v1/user/search", middleware.Validate(searchUsers(svc)))
+	r.Handle("/api/v1/user/updatebio", middleware.Validate(updateBio(svc)))
 }

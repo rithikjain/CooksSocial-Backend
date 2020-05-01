@@ -31,6 +31,8 @@ type Repository interface {
 	SearchUsers(userID uint, query string, pageNo int) (*pagination.Paginator, error)
 
 	RemoveRecipeFromFav(userID, recipeID uint) error
+
+	UpdateUserBio(userID uint, bio string) error
 }
 
 type repo struct {
@@ -229,6 +231,19 @@ func (r *repo) SearchUsers(userID uint, query string, pageNo int) (*pagination.P
 
 func (r *repo) RemoveRecipeFromFav(userID, recipeID uint) error {
 	err := r.DB.Where("user_id = ? and recipe_id = ?", userID, recipeID).Unscoped().Delete(&entities.FavoriteRecipe{}).Error
+	if err != nil {
+		return pkg.ErrDatabase
+	}
+	return nil
+}
+
+func (r *repo) UpdateUserBio(userID uint, bio string) error {
+	u, err := r.FindByID(userID)
+	if err != nil {
+		return pkg.ErrDatabase
+	}
+	u.Bio = bio
+	err = r.DB.Save(u).Error
 	if err != nil {
 		return pkg.ErrDatabase
 	}
