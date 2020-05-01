@@ -59,7 +59,7 @@ func main() {
 
 	defer db.Close()
 	fmt.Println("Connected to DB...")
-	db.LogMode(true)
+	//db.LogMode(true)
 	db.AutoMigrate(
 		&entities.User{},
 		&entities.Recipe{},
