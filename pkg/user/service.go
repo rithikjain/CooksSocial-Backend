@@ -37,6 +37,8 @@ type Service interface {
 
 	UpdateUserBio(userID uint, bio string) error
 
+	HasUserFavorited(userID, recipeID uint) (bool, error)
+
 	GetRepo() Repository
 }
 
@@ -134,6 +136,10 @@ func (s *service) SearchUsers(userID uint, query string, pageNo int) (*paginatio
 
 func (s *service) UpdateUserBio(userID uint, bio string) error {
 	return s.repo.UpdateUserBio(userID, bio)
+}
+
+func (s *service) HasUserFavorited(userID, recipeID uint) (bool, error) {
+	return s.repo.HasUserFavorited(userID, recipeID)
 }
 
 func (s *service) GetRepo() Repository {

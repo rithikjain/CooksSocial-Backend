@@ -33,8 +33,6 @@ type Service interface {
 	DeleteRecipe(recipeID uint) error
 
 	HasUserLiked(userID, recipeID uint) (bool, error)
-
-	HasUserFavorited(userID, recipeID uint) (bool, error)
 }
 
 type service struct {
@@ -101,8 +99,4 @@ func (s *service) DeleteRecipe(recipeID uint) error {
 
 func (s *service) HasUserLiked(userID, recipeID uint) (bool, error) {
 	return s.repo.HasUserLiked(userID, recipeID)
-}
-
-func (s *service) HasUserFavorited(userID, recipeID uint) (bool, error) {
-	return s.repo.HasUserFavorited(userID, recipeID)
 }

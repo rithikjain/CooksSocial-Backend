@@ -343,15 +343,30 @@ func addRecipeToFav(svc user.Service) http.Handler {
 			return
 		}
 		recipeID, _ := strconv.Atoi(recipeIDStr)
-		err = svc.AddRecipeToFav(uint(claims["id"].(float64)), uint(recipeID))
+		userID := uint(claims["id"].(float64))
+
+		hasFavorited, err := svc.HasUserFavorited(userID, uint(recipeID))
 		if err != nil {
 			view.Wrap(err, w)
 			return
 		}
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Recipe added to favorites",
-		})
+		if hasFavorited {
+			w.Header().Add("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "Recipe was already favorited",
+			})
+		} else {
+			err = svc.AddRecipeToFav(userID, uint(recipeID))
+			if err != nil {
+				view.Wrap(err, w)
+				return
+			}
+			w.Header().Add("Content-Type", "application/json; charset=utf-8")
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "Recipe added to favorites",
+			})
+		}
 	})
 }
 
