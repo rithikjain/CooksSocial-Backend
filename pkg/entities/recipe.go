@@ -12,6 +12,7 @@ type Recipe struct {
 	Procedure   string       `json:"procedure"`
 	ImgUrl      string       `json:"img_url"`
 	ImgPublicId string       `json:"-"`
+	Name        string       `json:"name"`
 	Username    string       `json:"username"`
 	UserImg     string       `json:"user_img"`
 	Likes       int          `json:"likes"`

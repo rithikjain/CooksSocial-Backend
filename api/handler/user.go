@@ -479,14 +479,19 @@ func viewFollowers(svc user.Service) http.Handler {
 			view.Wrap(err, w)
 			return
 		}
+
+		hasNextPage := true
+		if page.Page >= page.TotalPage {
+			hasNextPage = false
+		}
+
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message":     "Users fetched",
-			"users":       page.Records,
-			"page":        page.Page,
-			"next_page":   page.NextPage,
-			"prev_page":   page.PrevPage,
-			"total_pages": page.TotalPage,
+			"message":       "Users fetched",
+			"users":         page.Records,
+			"page":          page.Page,
+			"has_next_page": hasNextPage,
+			"total_pages":   page.TotalPage,
 		})
 	})
 }
@@ -517,14 +522,19 @@ func viewFollowing(svc user.Service) http.Handler {
 			view.Wrap(err, w)
 			return
 		}
+
+		hasNextPage := true
+		if page.Page >= page.TotalPage {
+			hasNextPage = false
+		}
+
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message":     "Users fetched",
-			"users":       page.Records,
-			"page":        page.Page,
-			"next_page":   page.NextPage,
-			"prev_page":   page.PrevPage,
-			"total_pages": page.TotalPage,
+			"message":       "Users fetched",
+			"users":         page.Records,
+			"page":          page.Page,
+			"has_next_page": hasNextPage,
+			"total_pages":   page.TotalPage,
 		})
 	})
 }
@@ -560,14 +570,19 @@ func searchUsers(svc user.Service) http.Handler {
 			view.Wrap(err, w)
 			return
 		}
+
+		hasNextPage := true
+		if page.Page >= page.TotalPage {
+			hasNextPage = false
+		}
+
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message":     "Users fetched",
-			"users":       page.Records,
-			"page":        page.Page,
-			"next_page":   page.NextPage,
-			"prev_page":   page.PrevPage,
-			"total_pages": page.TotalPage,
+			"message":       "Users fetched",
+			"users":         page.Records,
+			"page":          page.Page,
+			"has_next_page": hasNextPage,
+			"total_pages":   page.TotalPage,
 		})
 	})
 }

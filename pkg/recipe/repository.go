@@ -33,6 +33,10 @@ type Repository interface {
 	SearchRecipes(query string, pageNo int) (*pagination.Paginator, error)
 
 	DeleteRecipe(recipeID uint) error
+
+	HasUserLiked(userID, recipeID uint) (bool, error)
+
+	HasUserFavorited(userID, recipeID uint) (bool, error)
 }
 
 type repo struct {
@@ -237,4 +241,28 @@ func (r *repo) DeleteRecipe(recipeID uint) error {
 		return pkg.ErrDatabase
 	}
 	return nil
+}
+
+func (r *repo) HasUserLiked(userID, recipeID uint) (bool, error) {
+	ans := r.DB.Where("user_id = ? and recipe_id = ?", userID, recipeID).Find(&entities.LikeDetail{})
+	if ans.Error != nil {
+		if ans.Error == gorm.ErrRecordNotFound {
+			return false, nil
+		} else {
+			return false, pkg.ErrDatabase
+		}
+	}
+	return true, nil
+}
+
+func (r *repo) HasUserFavorited(userID, recipeID uint) (bool, error) {
+	ans := r.DB.Where("user_id = ? and recipe_id = ?", userID, recipeID).Find(&entities.FavoriteRecipe{})
+	if ans.Error != nil {
+		if ans.Error == gorm.ErrRecordNotFound {
+			return false, nil
+		} else {
+			return false, pkg.ErrDatabase
+		}
+	}
+	return true, nil
 }

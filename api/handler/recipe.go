@@ -90,6 +90,7 @@ func createRecipe(svc recipe.Service) http.Handler {
 			Procedure:   r.FormValue("procedure"),
 			ImgUrl:      resJson["secure_url"].(string),
 			ImgPublicId: resJson["public_id"].(string),
+			Name:        us.Name,
 			Username:    us.Username,
 			UserImg:     us.ProfileImgUrl,
 		}
@@ -278,14 +279,19 @@ func showAllRecipesOfUser(svc recipe.Service) http.Handler {
 			view.Wrap(err, w)
 			return
 		}
+
+		hasNextPage := true
+		if page.Page >= page.TotalPage {
+			hasNextPage = false
+		}
+
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message":     "Recipes fetched",
-			"recipes":     page.Records,
-			"page":        page.Page,
-			"next_page":   page.NextPage,
-			"prev_page":   page.PrevPage,
-			"total_pages": page.TotalPage,
+			"message":       "Recipes fetched",
+			"recipes":       page.Records,
+			"page":          page.Page,
+			"has_next_page": hasNextPage,
+			"total_pages":   page.TotalPage,
 		})
 	})
 }
@@ -317,14 +323,19 @@ func showMyRecipes(svc recipe.Service) http.Handler {
 			view.Wrap(err, w)
 			return
 		}
+
+		hasNextPage := true
+		if page.Page >= page.TotalPage {
+			hasNextPage = false
+		}
+
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message":     "Recipes fetched",
-			"recipes":     page.Records,
-			"page":        page.Page,
-			"next_page":   page.NextPage,
-			"prev_page":   page.PrevPage,
-			"total_pages": page.TotalPage,
+			"message":       "Recipes fetched",
+			"recipes":       page.Records,
+			"page":          page.Page,
+			"has_next_page": hasNextPage,
+			"total_pages":   page.TotalPage,
 		})
 	})
 }
@@ -356,14 +367,18 @@ func showMyFavRecipes(svc recipe.Service) http.Handler {
 			return
 		}
 
+		hasNextPage := true
+		if page.Page >= page.TotalPage {
+			hasNextPage = false
+		}
+
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message":     "Favorite recipes fetched",
-			"recipes":     page.Records,
-			"page":        page.Page,
-			"next_page":   page.NextPage,
-			"prev_page":   page.PrevPage,
-			"total_pages": page.TotalPage,
+			"message":       "Favorite recipes fetched",
+			"recipes":       page.Records,
+			"page":          page.Page,
+			"has_next_page": hasNextPage,
+			"total_pages":   page.TotalPage,
 		})
 	})
 }
@@ -387,16 +402,29 @@ func likeRecipe(svc recipe.Service) http.Handler {
 		recipeIDStr := r.URL.Query().Get("recipe_id")
 		recipeID, _ := strconv.Atoi(recipeIDStr)
 
-		err = svc.LikeRecipe(userID, uint(recipeID))
+		hasLiked, err := svc.HasUserLiked(userID, uint(recipeID))
 		if err != nil {
 			view.Wrap(err, w)
 			return
 		}
+		if hasLiked {
+			w.Header().Add("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "Recipe was already liked",
+			})
+		} else {
+			err = svc.LikeRecipe(userID, uint(recipeID))
+			if err != nil {
+				view.Wrap(err, w)
+				return
+			}
 
-		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message": "Recipe liked",
-		})
+			w.Header().Add("Content-Type", "application/json; charset=utf-8")
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"message": "Recipe liked",
+			})
+		}
 	})
 }
 
@@ -455,14 +483,18 @@ func showUsersWhoLiked(svc recipe.Service) http.Handler {
 			return
 		}
 
+		hasNextPage := true
+		if page.Page >= page.TotalPage {
+			hasNextPage = false
+		}
+
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message":     "Users fetched",
-			"users":       page.Records,
-			"page":        page.Page,
-			"next_page":   page.NextPage,
-			"prev_page":   page.PrevPage,
-			"total_pages": page.TotalPage,
+			"message":       "Users fetched",
+			"users":         page.Records,
+			"page":          page.Page,
+			"has_next_page": hasNextPage,
+			"total_pages":   page.TotalPage,
 		})
 	})
 }
@@ -495,14 +527,18 @@ func showUserFeed(svc recipe.Service) http.Handler {
 			return
 		}
 
+		hasNextPage := true
+		if page.Page >= page.TotalPage {
+			hasNextPage = false
+		}
+
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message":     "Recipes fetched",
-			"recipes":     page.Records,
-			"page":        page.Page,
-			"next_page":   page.NextPage,
-			"prev_page":   page.PrevPage,
-			"total_pages": page.TotalPage,
+			"message":       "Recipes fetched",
+			"recipes":       page.Records,
+			"page":          page.Page,
+			"has_next_page": hasNextPage,
+			"total_pages":   page.TotalPage,
 		})
 	})
 }
@@ -526,14 +562,19 @@ func showAllLatestRecipes(svc recipe.Service) http.Handler {
 			view.Wrap(err, w)
 			return
 		}
+
+		hasNextPage := true
+		if page.Page >= page.TotalPage {
+			hasNextPage = false
+		}
+
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message":     "Recipes fetched",
-			"recipes":     page.Records,
-			"page":        page.Page,
-			"next_page":   page.NextPage,
-			"prev_page":   page.PrevPage,
-			"total_pages": page.TotalPage,
+			"message":       "Recipes fetched",
+			"recipes":       page.Records,
+			"page":          page.Page,
+			"has_next_page": hasNextPage,
+			"total_pages":   page.TotalPage,
 		})
 	})
 }
@@ -564,14 +605,19 @@ func searchRecipes(svc recipe.Service) http.Handler {
 			view.Wrap(err, w)
 			return
 		}
+
+		hasNextPage := true
+		if page.Page >= page.TotalPage {
+			hasNextPage = false
+		}
+
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"message":     "Recipes fetched",
-			"recipes":     page.Records,
-			"page":        page.Page,
-			"next_page":   page.NextPage,
-			"prev_page":   page.PrevPage,
-			"total_pages": page.TotalPage,
+			"message":       "Recipes fetched",
+			"recipes":       page.Records,
+			"page":          page.Page,
+			"has_next_page": hasNextPage,
+			"total_pages":   page.TotalPage,
 		})
 	})
 }
